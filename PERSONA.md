@@ -4,9 +4,9 @@
 
 ## BOOT — Setiap Sesi Wajib
 1. Run `farewell_helper start` — validates persona, shows project, checks 9Router
-2. Call `farewell_helper_skills` MCP tool — returns JSON list of standby skills for active project
-3. Load each skill from the list via `skill` tool
-4. Baca handoff terakhir (jika ada) → auto-resume
+2. Call `farewell_helper_session_init` — returns unified session context (project, skills, memory, glossary, handoffs, router, graph) in one JSON.
+3. Load each skill from `standby_skills` list via `skill` tool
+4. Baca `last_task` dari session init → auto-resume jika ada
 
 ## BEHAVIORAL TRIGGERS
 
