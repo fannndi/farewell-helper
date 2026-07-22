@@ -251,40 +251,32 @@ def _cmd_start() -> None:
         from ..archetype import detect, get_standby_skills
         arc = detect(proj_path)
         stack = arc.get("stack", "generic")
-        skill_names = get_standby_skills(stack)
-        info(f"Stack: {stack} ({len(skill_names)} skills)")
+        skill_count = len(get_standby_skills(stack))
+        info(f"Stack: {stack} ({skill_count} standby skills)")
     else:
-        skill_names = [
-            "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
-            "farewell-devops", "farewell-error-handling", "farewell-git",
-        ]
+        stack = "generic"
+        skill_count = 0
 
     from ..setup_project import check_sub_project
     check_sub_project()
 
-    from ..router_client import ping
+    from ..router_client import ping, check_token_saver_conflicts, combo_health_check
     alive = ping()
     if alive["alive"]:
         ok(f"9Router ALIVE ({alive['latency_ms']}ms)")
-        from ..router_client import check_token_saver_conflicts, combo_health_check
         conflicts = check_token_saver_conflicts()
         if conflicts:
             from ..helpers import warn
-            warn("Token saver conflicts with PERSONA.md:")
+            warn("Token saver conflicts:")
             for c in conflicts:
                 info(f"  {c}")
-            info("Disable Ponytail + Caveman: 9Router dashboard > Token Saver")
         combo = combo_health_check()
         info(f"Combos: {combo['combos']} active")
-        for s in combo["suggestions"][:2]:
-            info(f"  Tip: {s}")
     else:
         info("9Router not running — start with: 9router")
 
-    info(f"Standby skills ({len(skill_names)}):")
-    for s in skill_names:
-        info(f"  {s}")
-    ok("Ready. Load standby skills, then wait for Boss goal.")
+    info("Next: call `farewell_helper_session_init` for unified session context")
+    ok("Ready.")
 
 
 def _cmd_init() -> None:

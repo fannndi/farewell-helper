@@ -95,6 +95,20 @@
   "instructions": [
     "PERSONA.md"
   ],
+  "references": {
+    "farewell-helper": {
+      "path": ".",
+      "description": "Farewell Helper — OpenCode agent + 9Router model gateway + skills + persona system"
+    },
+    "9router": {
+      "path": "source/9router",
+      "hidden": true
+    },
+    "opencode": {
+      "path": "source/opencode",
+      "hidden": true
+    }
+  },
   "agent": {
     "build": {
       "description": "Farewell Helper - full access, eksekusi",
