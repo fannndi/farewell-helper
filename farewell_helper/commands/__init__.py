@@ -104,6 +104,12 @@ def main() -> None:
     p.add_argument("--code", "-c", default="001", help="Project code")
     p.set_defaults(func=lambda args: _cmd_health(args))
 
+    # assist — full project state + suggestions
+    p = sub.add_parser("assist", help="Project assistant: state overview + smart suggestions")
+    p.add_argument("--project", "-p", default="farewell-helper", help="Project name")
+    p.add_argument("--code", "-c", default="001", help="Project code")
+    p.set_defaults(func=lambda args: _cmd_assist(args))
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()

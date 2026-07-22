@@ -1,9 +1,11 @@
-"""System state commands — status, verify, init, health."""
+"""System state commands — status, verify, init, health, assist."""
 import argparse
+import json
 import re
 import subprocess
 import sys
-from ..helpers import c, ok, fail, info
+from datetime import datetime, timezone
+from ..helpers import c, ok, fail, info, warn
 from .. import config as fconfig
 
 
@@ -101,4 +103,83 @@ def health(args: argparse.Namespace) -> None:
         print(f"  Memory:     {len(mem) // 4:,} tok")
         print(f"  Skills:     {total_skill_chars // 4:,} tok ({len(skill_counts)} files)")
         print(f"  Total:      ~{total_context // 4:,} tok")
+    print()
+
+
+def assist(args: argparse.Namespace) -> None:
+    """Full project assistant — actionable state overview with suggestions."""
+    from .project import get_active, _load_projects
+    from ..core.memory import memory_content, memory_usage_pct
+    from ..core.session import recent_sessions, last_handoff
+    from ..context_manager import context_content
+    from ..archetype import detect, get_standby_skills
+
+    active = get_active()
+    code = active.get("code", "001")
+    name = active.get("name", "farewell-helper")
+    proj_path = fconfig.project_path(code)
+
+    print(f"\n  {c(f'Assistant — {code}-{name}', 'cyan')}")
+
+    if proj_path:
+        arc = detect(proj_path)
+        stack = arc.get("stack", "generic")
+        skills = get_standby_skills(stack)
+        print(f"  Stack:     {stack} ({len(skills)} standby skills)")
+    else:
+        stack = "unknown"
+
+    mem = memory_content(code, name)
+    mem_pct = memory_usage_pct(code, name)
+    mem_tag = c(f" {mem_pct:.0f}%", "yellow") if mem_pct > 80 else ""
+    print(f"  Memory:    {len(mem)} chars{mem_tag}")
+
+    todo_file = fconfig.project_farewell_dir(code) / "context" / "TODO.md"
+    if todo_file.exists():
+        todo_content = todo_file.read_text(encoding="utf-8")
+        pending = todo_content.count("- [ ]")
+        done = todo_content.count("- [x]")
+        print(f"  TODO:      {pending} pending, {done} done")
+    else:
+        todo_content = ""
+        pending = 0
+        print(f"  TODO:      none")
+
+    ctx = context_content(code, name)
+    terms = ctx.count("- **") if ctx else 0
+    if terms == 0:
+        print(f"  Glossary:  {c('empty — run grilling to build', 'yellow')}")
+    else:
+        print(f"  Glossary:  {terms} term(s)")
+
+    sessions = recent_sessions(code, name, 5)
+    if sessions:
+        last = sessions[-1]
+        task = last.get("task", "?")
+        print(f"  Last task: {task[:60]}")
+    else:
+        print(f"  Sessions:  none tracked")
+
+    all_projects = _load_projects()
+    if len(all_projects) > 1:
+        print(f"\n  {c('All Projects', 'cyan')}")
+        for p in all_projects:
+            marker = c(" *", "green") if p["code"] == code else ""
+            print(f"  {p['code']} {p['name']}{marker}")
+
+    print(f"\n  {c('Suggestions', 'cyan')}")
+    suggestions: list[str] = []
+    if terms == 0:
+        suggestions.append("No glossary terms — run grilling to build shared language")
+    if mem_pct > 80:
+        suggestions.append("Memory nearly full — consolidate or archive old entries")
+    if pending > 0:
+        suggestions.append(f"{pending} pending TODOs — run `todo show` to review")
+        todo_tasks = [l.strip() for l in todo_content.split("\n") if l.strip().startswith("- [ ]")]
+        for t in todo_tasks[:3]:
+            suggestions.append(f"  {t}")
+    if not suggestions:
+        suggestions.append("All clear. Ready for Boss's next goal.")
+    for s in suggestions:
+        print(f"  {c('->', 'green')} {s}")
     print()
