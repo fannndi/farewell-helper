@@ -117,18 +117,37 @@ def done(args: argparse.Namespace) -> None:
             info(f"  {issue}")
         return
 
-    info("Step 2/5: Committing changes")
+    info("Step 2/5: Staging changes")
     msg = getattr(args, "message", None) or f"Done: {getattr(args, 'task', 'session tasks')}"
     status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, timeout=10)
-    if not status.stdout.strip():
+    lines = [l for l in status.stdout.strip().split("\n") if l.strip()]
+
+    if not lines:
         info("  No changes to commit")
+        task_files = []
     else:
-        subprocess.run(["git", "add", "-A"], capture_output=True, timeout=10)
-        commit = subprocess.run(["git", "commit", "-m", msg], capture_output=True, text=True, timeout=30)
-        if commit.returncode != 0:
-            fail(f"Commit failed: {commit.stderr[:200]}")
-            return
-        info(f"  Committed: {msg[:80]}")
+        staged: list[str] = []
+        for line in lines:
+            status_code = line[:2]
+            file_path = line[3:].strip()
+            if status_code.strip() in ("M", "A", "D", "R", "MM", "AM"):
+                staged.append(file_path)
+            elif status_code.startswith("??"):
+                from ..helpers import info as inf
+                inf(f"  Skipping untracked: {file_path}")
+
+        if not staged:
+            info("  No tracked changes to stage")
+            task_files = []
+        else:
+            for f in staged:
+                subprocess.run(["git", "add", f], capture_output=True, timeout=10)
+            commit = subprocess.run(["git", "commit", "-m", msg], capture_output=True, text=True, timeout=30)
+            if commit.returncode != 0:
+                fail(f"Commit failed: {commit.stderr[:200]}")
+                return
+            task_files = staged
+            info(f"  Committed: {msg[:80]} ({len(staged)} file(s))")
 
     info("Step 3/5: Pushing to remote")
     remote_check = subprocess.run(["git", "remote"], capture_output=True, text=True, timeout=5)
@@ -143,10 +162,6 @@ def done(args: argparse.Namespace) -> None:
 
     info("Step 4/5: Generating handoff")
     task_summary = getattr(args, "task", "Session completed")
-    task_files = []
-    diff = subprocess.run(["git", "diff", "--name-only", "HEAD~1"], capture_output=True, text=True, timeout=10)
-    if diff.stdout.strip():
-        task_files = diff.stdout.strip().split("\n")[:20]
     handoff_path = generate_handoff(code, name, task_summary, "done", task_summary, task_files)
 
     mem = memory_content(code, name)
@@ -158,7 +173,6 @@ def done(args: argparse.Namespace) -> None:
     proj_ctx = fconfig.project_farewell_dir(code) / "context"
     proj_ctx.mkdir(parents=True, exist_ok=True)
     todo_file = proj_ctx / "TODO.md"
-    # Migrate old todo if exists
     old_todo = fconfig.FAREWELL_DIR / "context" / f"{code}-{name}" / "TODO.md"
     if old_todo.exists() and not todo_file.exists():
         todo_file.write_text(old_todo.read_text(encoding="utf-8"), encoding="utf-8")

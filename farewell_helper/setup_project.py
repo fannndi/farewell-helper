@@ -49,6 +49,8 @@ def analyze(path_str: str) -> dict:
         (ctx_dir / "archetype.md").write_text(report, encoding="utf-8")
         init_context_from_archetype(code, name, arc)
 
+    _generate_workspace_audit(target, code)
+
     from datetime import datetime
     update_metadata(code, name, "created_at", datetime.now().isoformat())
     update_metadata(code, name, "last_accessed", datetime.now().isoformat())
@@ -184,3 +186,41 @@ def get_effective_skills(project_path: Path) -> list[str]:
             local_skills.append(skill_name)
 
     return list(dict.fromkeys(local_skills + base_skills))
+
+
+def _generate_workspace_audit(project_path: Path, code: str) -> None:
+    """Generate a workspace audit report: what's available, what's missing."""
+    ctx_dir = config.project_farewell_dir(code) / "context"
+    ctx_dir.mkdir(parents=True, exist_ok=True)
+
+    findings: list[str] = []
+    findings.append(f"# Workspace Audit — {project_path.name}\n")
+
+    markers = {
+        ("tests", "Test runner"): ["pytest.ini", "setup.cfg", "tox.ini", "jest.config.js", "vitest.config.ts"],
+        ("ci", "CI/CD"): [".github/workflows/", ".gitlab-ci.yml", "Jenkinsfile"],
+        ("docker", "Docker"): ["Dockerfile", "docker-compose.yml", "docker-compose.yaml"],
+        ("env", "Environment config"): [".env.example", ".env"],
+        ("lint", "Linter"): [".ruf.toml", ".eslintrc.js", ".eslintrc.json", ".prettierrc"],
+    }
+    available: list[str] = []
+    missing: list[str] = []
+
+    for (tag, label), paths in markers.items():
+        found = any((project_path / p).exists() for p in paths)
+        (available if found else missing).append(label)
+
+    findings.append("## Available")
+    findings.extend(f"- {a}" for a in available) if available else findings.append("- (none detected)")
+    findings.append("\n## Missing")
+    findings.extend(f"- {m}" for m in missing) if missing else findings.append("- (all essentials present)")
+
+    env_file = project_path / ".env" if (project_path / ".env").exists() else (project_path / ".env.example")
+    if env_file.exists():
+        findings.append("\n## Environment Keys")
+        for line in env_file.read_text(encoding="utf-8").splitlines()[:20]:
+            line = line.strip()
+            if "=" in line and not line.startswith("#"):
+                findings.append(f"- `{line.split('=')[0]}`")
+
+    (ctx_dir / "workspace-audit.md").write_text("\n".join(findings) + "\n", encoding="utf-8")

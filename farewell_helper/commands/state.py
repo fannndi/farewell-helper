@@ -85,4 +85,20 @@ def health(args: argparse.Namespace) -> None:
 
     sessions = recent_sessions(code, name, 100)
     print(f"  Sessions:  {len(sessions)} tracked")
+
+    skill_dir = fconfig.ROOT_DIR / "skills"
+    if skill_dir.exists():
+        total_skill_chars = 0
+        skill_counts: dict[str, int] = {}
+        for sf in sorted(skill_dir.rglob("SKILL.md")):
+            chars = len(sf.read_text(encoding="utf-8"))
+            total_skill_chars += chars
+            skill_counts[sf.parent.name] = chars // 4
+        persona_chars = sum(len(f.read_text(encoding="utf-8")) for f in fconfig.persona_files() if f.exists())
+        total_context = total_skill_chars + persona_chars + len(mem)
+        print(f"\n  {c('Context Budget', 'cyan')}")
+        print(f"  PERSONA:    {persona_chars // 4:,} tok")
+        print(f"  Memory:     {len(mem) // 4:,} tok")
+        print(f"  Skills:     {total_skill_chars // 4:,} tok ({len(skill_counts)} files)")
+        print(f"  Total:      ~{total_context // 4:,} tok")
     print()
