@@ -102,6 +102,7 @@ def main() -> None:
     p = sub.add_parser("health", help="Full project health report")
     p.add_argument("--project", "-p", default="farewell-helper", help="Project name")
     p.add_argument("--code", "-c", default="001", help="Project code")
+    p.add_argument("--deep", action="store_true", help="Include codebase-memory knowledge graph stats")
     p.set_defaults(func=lambda args: _cmd_health(args))
 
     # assist — full project state + suggestions

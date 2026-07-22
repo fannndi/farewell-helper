@@ -57,6 +57,7 @@ def health(args: argparse.Namespace) -> None:
 
     active = get_active()
     code, name = active.get("code", "001"), active.get("name", "farewell-helper")
+    proj_path = fconfig.project_path(code)
 
     print(f"\n  {c('Project Health', 'cyan')}")
 
@@ -103,6 +104,28 @@ def health(args: argparse.Namespace) -> None:
         print(f"  Memory:     {len(mem) // 4:,} tok")
         print(f"  Skills:     {total_skill_chars // 4:,} tok ({len(skill_counts)} files)")
         print(f"  Total:      ~{total_context // 4:,} tok")
+
+    deep = getattr(args, "deep", False)
+    if deep and proj_path:
+        try:
+            r = subprocess.run(
+                ["codebase-memory-mcp", "cli", "index_status", str(proj_path)],
+                capture_output=True, text=True, timeout=10,
+            )
+            if r.returncode == 0:
+                try:
+                    import json
+                    status = json.loads(r.stdout)
+                    print(f"\n  {c('Knowledge Graph', 'cyan')}")
+                    print(f"  Nodes:      {status.get('nodes', '?')}")
+                    print(f"  Edges:      {status.get('edges', '?')}")
+                    print(f"  ADRs:       {status.get('adr_count', '?')}")
+                except Exception:
+                    info("Knowledge graph: indexed (deep stats unavailable)")
+            else:
+                info("Knowledge graph: not indexed — run `codebase-memory-mcp cli index_repository .`")
+        except Exception:
+            info("Knowledge graph: codebase-memory-mcp not installed")
     print()
 
 
