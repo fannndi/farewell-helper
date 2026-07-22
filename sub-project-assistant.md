@@ -1,115 +1,73 @@
 # Sub-Project Assistant
 
-Farewell Helper multi-repo mode. Manage multiple projects from one session with isolated memory, context, state, and stack-specific standby skills per repo.
+Farewell Helper multi-repo mode with knowledge graph intelligence. Switch projects in one command, get full context instantly.
 
 ## Quick Start
 
 ```bash
-# Register external project
 farewell-helper setup-project /path/to/project
-
-# Switch active project
 farewell-helper project switch <code>
-
-# Get full project overview + suggestions
 farewell-helper assist
-
-# Memory/context scoped to that project
-farewell-helper memory show
-farewell-helper handoff list
 ```
 
-## Development Workflow
+## Project Switch — What Happens
 
-Every new feature or project follows 4 phases. Never skip.
-
-### Phase 1 — Brainstorm (No Code)
-
-Boss says "I want to build X." AI runs `farewell-prd`:
+`project switch <code>` now shows a full summary:
 
 ```
-farewell-prd
-  → Grill Boss (one question at a time)
-  → docs/prd-<slug>.md       (what & why)
-  → docs/design-<slug>.md    (how — implementation blueprint)
-  → TODO.md                   (phased build plan)
+Switched to 002-service-hub
+  Stack: nodejs (13 standby skills)
+  Memory: 892 chars (41%)
+  TODO: 3 pending
+  Graph: 2,847 nodes, 8,192 edges
 ```
 
-**Design.md is NOT** colors/typography. It's the technical blueprint:
-UX flows, component behavior, state management, data flow, edge cases, error handling, accessibility, responsive behavior, interaction patterns, design constraints. The more detail, the less AI hallucinates.
+If the project isn't indexed yet: `Graph: not indexed — index for 120x faster audits`. Say "Index this project" to index via Codebase-Memory.
 
-### Phase 2 — Phase Plan
+## Assist — Full Intelligence
 
-PRD output includes 7 sequential phases:
-```
-Phase 1 → Project setup
-Phase 2 → Database & Auth
-Phase 3 → Backend API
-Phase 4 → Backend tests
-Phase 5 → Frontend (start ONLY after backend passes)
-Phase 6 → Integration tests
-Phase 7 → Deployment
-```
+`assist` now includes knowledge graph stats when available. Use `assist --audit` to regenerate workspace audit.
 
-### Phase 3 — Build (Layer by Layer)
+## Cross-Project Workflow
 
-AI runs `farewell-tdd` phase by phase:
+When working across multiple projects, Codebase-Memory enables cross-project intelligence:
 
-- Never build frontend + backend simultaneously.
-- Backend → test → document → Frontend → integrate.
-- One vertical slice per TDD cycle.
-- PRD + Design.md must exist before any code.
+1. Index all projects: say "Index this project" in each
+2. Cross-reference: `index_repository(mode="cross-repo-intelligence", target_projects=["*"])`
+3. Trace cross-service calls: `trace_path(mode="cross_service")`
 
-### Phase 4 — Audit
+## Standby Skills Per Project
 
-After building, AI runs `farewell-audit`:
-- Review code quality, security, production readiness.
-- OR: study external source code for patterns to reuse.
-
-## Standby Skills
-
-Each project's stack determines which skills are loaded. Running `farewell_helper start` outputs the standby skill list specific to the active project's detected stack.
+Each project loads only its relevant skills (not all 17):
 
 | Stack | Skills loaded |
 |-------|--------------|
-| Python | persona, tdd, diagnosing-bugs, grilling, prd, audit, python, devops, api-design, error-handling, production-audit, git, workspace-audit |
-| Flutter | persona, tdd, diagnosing-bugs, grilling, prd, audit, flutter, devops, api-design, error-handling, production-audit, git, workspace-audit |
-| Node/React/Vue | persona, tdd, diagnosing-bugs, grilling, prd, audit, frontend, devops, api-design, error-handling, production-audit, git, workspace-audit |
-| Rust | persona, tdd, diagnosing-bugs, grilling, prd, audit, rust, devops, error-handling, production-audit, git, workspace-audit |
-| C | persona, tdd, diagnosing-bugs, grilling, prd, audit, c, devops, error-handling, production-audit, git, workspace-audit |
+| Python | 13 skills (persona, engineering, python, devops, api-design, error-handling, production-audit, git, workspace-audit, prd, audit) |
+| Flutter | 13 skills (flutter replaces python) |
+| Node/React/Vue | 13 skills (frontend replaces python) |
+| C | 13 skills (farewell-c replaces python, no api-design) |
+| Rust | 12 skills (farewell-rust replaces python, no api-design) |
 
-Core 6 skills (persona, tdd, diagnosing-bugs, grilling, prd, audit) always loaded. Stack skills depend on archetype. Mapping in `farewell_helper/archetype.py:STACK_SKILL_MAP`.
+Core 6 always loaded: persona, tdd, diagnosing-bugs, grilling, prd, audit.
 
-## Registry
-
-`~/.farewell/projects.txt` stores registered projects:
-```
-001|farewell-helper
-002|my-project|/abs/path/to/my-project
-```
-
-Format: `code|name|path`. Code `001` is reserved for farewell-helper itself.
-
-## Per-Project .farewell/
+## Project State Per-Project
 
 ```
-<project-root>/.farewell/
-├── memory/          # MEMORY.md, USER.md, handoff-*.md, lineage.json
+<project>/.farewell/
+├── memory/          # MEMORY.md, USER.md, handoff-*.md
 ├── context/         # AUTO-GLOSSARY.md, TODO.md, archetype.json, workspace-audit.md
-└── skills/
-    └── local/       # Project-specific skill overrides (*.md)
+└── skills/local/    # Project-specific overrides
 ```
+
+Plus Codebase-Memory knowledge graph (global, indexed per project path).
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `setup-project <path>` | Register external project, inject `.farewell/`, auto-audit workspace |
-| `assist` | Full project overview + smart suggestions |
-| `project list` | All registered projects |
-| `project switch <code>` | Switch active project context |
-| `project status` | Active project details |
-| `memory show/edit/save` | Read/write MEMORY.md per project |
-| `handoff list/show/search` | Session handoffs per project |
-| `todo show/create/check` | TODO.md per project |
-| `done` | Commit + push + handoff generation |
+| Command | Shows |
+|---------|-------|
+| `project switch <code>` | Stack + skills + memory + TODOs + graph |
+| `assist` | Full state + suggestions + graph stats |
+| `assist --audit` | Regenerate workspace audit |
+| `start` | Persona + project + 9Router + standby skills |
+| `daily` | Verify + sync + token saver + combos + graph |
+| `health --deep` | Tests + 9Router + memory + context budget + graph |

@@ -113,17 +113,49 @@ def cmd_project(args: argparse.Namespace) -> None:
             return
         t = target[0]
         set_active(t["code"], t["name"])
-        ok(f"Switched to {t['code']}-{t['name']}")
 
         proj_path = config.project_path(t["code"])
         if proj_path is None:
             proj_path = config.ROOT_DIR
-        from ..archetype import detect, save_archetype
+        from ..archetype import detect, save_archetype, get_standby_skills
         arc = detect(proj_path)
         save_archetype(arc, code=t["code"])
+        stack = arc.get("stack", "generic")
+        skills = get_standby_skills(stack)
         from ..setup_project import update_metadata
         update_metadata(t["code"], t["name"], "last_sync", __import__("datetime").datetime.now().isoformat())
-        info("Auto-sync archetype completed")
+
+        from ..core.memory import memory_content, memory_usage_pct
+        mem = memory_content(t["code"], t["name"])
+        mem_pct = memory_usage_pct(t["code"], t["name"])
+
+        ok(f"Switched to {t['code']}-{t['name']}")
+        info(f"Stack: {stack} ({len(skills)} standby skills)")
+        if mem:
+            info(f"Memory: {len(mem)} chars ({mem_pct:.0f}%)")
+        else:
+            info("Memory: empty")
+
+        todo_file = config.project_farewell_dir(t["code"]) / "context" / "TODO.md"
+        if todo_file.exists():
+            todo = todo_file.read_text(encoding="utf-8")
+            pending = todo.count("- [ ]")
+            info(f"TODO: {pending} pending")
+
+        import subprocess
+        try:
+            r = subprocess.run(["codebase-memory-mcp", "cli", "list_projects"], capture_output=True, text=True, timeout=5)
+            if r.returncode == 0:
+                import json
+                proj_list = json.loads(r.stdout).get("projects", [])
+                proj_name = str(proj_path).replace("\\", "/")
+                matched = [p for p in proj_list if p.get("root_path", "").replace("\\", "/") == proj_name]
+                if matched:
+                    info(f"Graph: {matched[0]['nodes']} nodes, {matched[0]['edges']} edges")
+                else:
+                    info("Graph: not indexed — index for 120x faster audits")
+        except Exception:
+            pass
     elif args.action == "unregister":
         target = [p for p in projects if p["code"] == args.code]
         if not target:
