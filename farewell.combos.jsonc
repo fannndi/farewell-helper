@@ -1,0 +1,25 @@
+{
+  // Source of truth for 9Router combo model strings.
+  // sync.py resolves ${PLACEHOLDER} references in opencode.template.jsonc
+  // using values from this file.
+  "FREE_Model": {
+    "model": "9router/FREE_Model",
+    "strategy": "round-robin",
+    "description": "Free tier round-robin untuk research & quick queries"
+  },
+  "Pro_Plan": {
+    "model": "9router/Pro_Plan",
+    "strategy": "fallback",
+    "description": "Strong reasoning untuk spec drafting & architecture"
+  },
+  "Execution_Paid": {
+    "model": "9router/Execution_Paid",
+    "strategy": "fallback",
+    "description": "Strongest model untuk complex implementation & bug fixing"
+  },
+  "Execution_Free": {
+    "model": "9router/FREE_Model",
+    "strategy": "round-robin",
+    "description": "Light execution murah"
+  }
+}
