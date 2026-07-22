@@ -180,6 +180,26 @@ def _cmd_daily() -> None:
             info(f"  Tip: {s}")
     else:
         info("9Router not running — start with: 9router")
+
+    from .project import get_active
+    from .. import config
+    import subprocess
+    import sys
+    active = get_active()
+    proj_path = config.project_path(active.get("code", "001"))
+    if proj_path:
+        try:
+            r = subprocess.run(
+                [sys.executable, "-c", f"from codebase_memory_mcp import __version__; print(__version__)"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if r.returncode == 0:
+                info("Codebase-Memory: available (knowledge graph active)")
+            else:
+                raise Exception("not installed")
+        except Exception:
+            info("Codebase-Memory: not running — install for 120x fewer audit tokens")
+
     ok("Daily check complete")
 
 
