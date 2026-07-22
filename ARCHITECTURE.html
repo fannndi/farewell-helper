@@ -2,438 +2,390 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Farewell Helper v5 — Architecture Map</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>farewell-helper v5 — architecture atlas</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, 'Segoe UI', monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }
-  a { color: #58a6ff; text-decoration: none; }
-  a:hover { text-decoration: underline; }
+:root {
+  --bg: oklch(0.12 0.012 255);
+  --panel: oklch(0.16 0.014 255);
+  --panel-raised: oklch(0.20 0.016 255);
+  --ink: oklch(0.95 0.008 255);
+  --muted: oklch(0.69 0.018 255);
+  --line: oklch(0.31 0.018 255);
+  --primary: oklch(0.65 0.18 35.8);
+  --accent: oklch(0.76 0.15 142);
+  --danger: oklch(0.64 0.20 25);
+  --blue: oklch(0.62 0.14 260);
+  --purple: oklch(0.64 0.16 300);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg); color: var(--ink);
+  display: flex; overflow: hidden;
+  font-size: 13px;
+}
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--line); border-radius:2px; }
 
-  .header { max-width: 1200px; margin: 0 auto 30px; padding: 20px; background: linear-gradient(135deg, #161b22 0%, #1c2128 100%); border-radius: 12px; border: 1px solid #30363d; }
-  .header h1 { font-size: 24px; color: #f0f6fc; margin-bottom: 6px; }
-  .header h1 span { color: #3fb950; }
-  .header .sub { color: #8b949e; font-size: 14px; }
-  .header .meta { margin-top: 10px; display: flex; gap: 20px; font-size: 13px; }
-  .header .meta span { color: #8b949e; }
-  .header .meta strong { color: #c9d1d9; }
-  .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .bg-green { background: #1b3a24; color: #3fb950; }
-  .bg-blue { background: #1a304a; color: #58a6ff; }
-  .bg-yellow { background: #3a2e1a; color: #d29922; }
-  .bg-purple { background: #2a1a3a; color: #bc8cff; }
-  .bg-red { background: #3a1a1a; color: #f85149; }
-  .bg-cyan { background: #1a3a3a; color: #39d2c0; }
+/* ── Rail ── */
+#rail {
+  width: 280px; min-width: 280px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+#rail-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--line);
+}
+#rail-header h1 { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+#rail-header .ver { color: var(--primary); font-weight: 500; }
+#rail-header .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+#rail-stats { display: flex; flex-wrap: wrap; gap: 2px 0; padding: 10px 18px; border-bottom: 1px solid var(--line); font-size: 11px; }
+.stat { min-width: 50%; }
+.stat .val { color: var(--ink); font-weight: 500; }
+.stat .lbl { color: var(--muted); }
+#rail-search { padding: 8px 18px; border-bottom: 1px solid var(--line); }
+#rail-search input {
+  width:100%; background:var(--bg); border:1px solid var(--line); border-radius:4px;
+  padding:5px 8px; color:var(--ink); font-size:12px; outline:none;
+}
+#rail-search input:focus { border-color:var(--primary); }
+#rail-list {
+  flex:1; overflow-y: auto; padding: 4px 0;
+}
+.rail-item {
+  padding: 6px 18px; cursor: pointer; display: flex; align-items: center;
+  gap: 8px; border-left: 2px solid transparent; transition: none;
+  font-size: 12px;
+}
+.rail-item:hover { background: var(--panel-raised); }
+.rail-item.active { border-left-color: var(--primary); background: var(--panel-raised); }
+.rail-item .icon { width:6px; height:6px; border-radius:50%; min-width:6px; }
+.rail-item .name { color: var(--ink); }
+.rail-item .meta { color: var(--muted); font-size: 11px; margin-left: auto; }
+.rail-section {
+  padding: 8px 18px 4px; font-size: 10px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;
+}
 
-  .grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+/* ── Main ── */
+#main {
+  flex:1; display: flex; flex-direction: column; overflow: hidden;
+}
+#graph-area {
+  flex:1; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+#graph-svg { width:100%; height:100%; }
+.node-bg { fill: var(--panel-raised); stroke: var(--line); stroke-width:1; cursor:pointer; transition: stroke 0.15s; }
+.node-bg:hover { stroke: var(--primary); }
+.node-bg.active { stroke: var(--primary); stroke-width:2; }
+.node-label { fill: var(--ink); font-size: 11px; text-anchor: middle; dominant-baseline: central; pointer-events:none; }
+.node-sublabel { fill: var(--muted); font-size: 9px; text-anchor: middle; dominant-baseline: central; pointer-events:none; }
+.edge-line { stroke: var(--line); stroke-width:1; fill:none; }
+.edge-line.calls { stroke: var(--accent); opacity:0.4; }
+.edge-arrow { fill: var(--line); }
+#graph-hint {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: var(--muted); background: var(--panel); padding: 4px 12px;
+  border-radius: 4px; border: 1px solid var(--line); white-space: nowrap;
+}
 
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; transition: border-color 0.2s; }
-  .card:hover { border-color: #58a6ff; }
-  .card.full { grid-column: 1 / -1; }
-  .card-header { padding: 14px 18px; border-bottom: 1px solid #21262d; display: flex; justify-content: space-between; align-items: center; }
-  .card-header h2 { font-size: 15px; color: #f0f6fc; font-weight: 600; }
-  .card-body { padding: 14px 18px; font-size: 13px; line-height: 1.6; }
+/* ── Detail ── */
+#detail {
+  width: 0; overflow: hidden; background: var(--panel);
+  border-left: 1px solid var(--line); transition: width 0.2s;
+  display: flex; flex-direction: column;
+}
+#detail.open { width: 380px; min-width: 380px; }
+#detail-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center;
+}
+#detail-header h2 { font-size: 14px; font-weight: 600; }
+#detail-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0 4px; }
+#detail-close:hover { color:var(--ink); }
+#detail-body { flex:1; overflow-y: auto; padding: 14px 18px; font-size: 12px; line-height: 1.6; }
+#detail-body h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 6px; }
+#detail-body h3:first-child { margin-top:0; }
+#detail-body .kv { display: flex; gap: 8px; padding: 2px 0; }
+#detail-body .kv dt { color: var(--muted); min-width: 90px; }
+#detail-body .kv dd { color: var(--ink); }
+#detail-body code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--accent); }
+#detail-body .tag { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 500; margin: 1px; }
+.tag-py { background: #1a304a; color: var(--blue); }
+.tag-cli { background: #2a1a3a; color: var(--purple); }
+.tag-core { background: #1b3a24; color: var(--accent); }
+.tag-config { background: #3a2e1a; color: #d29922; }
 
-  .pillar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 600px) { .pillar-grid { grid-template-columns: 1fr; } }
-  .pillar { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; }
-  .pillar h3 { font-size: 14px; margin-bottom: 8px; }
-  .pillar .role { font-size: 12px; color: #8b949e; margin-bottom: 8px; }
-  .pillar ul { list-style: none; }
-  .pillar ul li { padding: 3px 0; font-size: 12px; color: #c9d1d9; }
-  .pillar ul li::before { content: '▸ '; color: #58a6ff; }
-
-  .cmd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  @media (max-width: 600px) { .cmd-grid { grid-template-columns: 1fr; } }
-  .cmd-item { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px; font-size: 12px; }
-  .cmd-item .cmd-name { color: #58a6ff; font-weight: 600; }
-  .cmd-item .cmd-desc { color: #8b949e; font-size: 11px; margin-top: 2px; }
-
-  .module-list { display: flex; flex-direction: column; gap: 4px; }
-  .module-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #21262d; font-size: 12px; }
-  .module-row:last-child { border-bottom: none; }
-  .module-row .m-name { color: #58a6ff; font-weight: 600; min-width: 160px; }
-  .module-row .m-loc { color: #8b949e; min-width: 40px; text-align: right; }
-  .module-row .m-desc { color: #c9d1d9; flex: 1; padding-left: 12px; }
-  .module-row .m-dep { color: #8b949e; font-size: 11px; padding-left: 12px; }
-
-  .flow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 600px) { .flow-grid { grid-template-columns: 1fr; } }
-  .flow-card { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; }
-  .flow-card h3 { font-size: 13px; color: #f0f6fc; margin-bottom: 6px; }
-  .flow-card ol, .flow-card ul { padding-left: 16px; font-size: 12px; color: #c9d1d9; }
-  .flow-card ol li, .flow-card ul li { padding: 2px 0; }
-
-  .file-tree { font-family: monospace; font-size: 12px; line-height: 1.7; color: #c9d1d9; }
-  .file-tree .dir { color: #58a6ff; }
-  .file-tree .file { color: #c9d1d9; }
-  .file-tree .highlight { background: #1a304a; border-radius: 3px; padding: 0 4px; }
-  .file-tree .depth-0 { padding-left: 0; }
-  .file-tree .depth-1 { padding-left: 20px; }
-  .file-tree .depth-2 { padding-left: 40px; }
-  .file-tree .depth-3 { padding-left: 60px; }
-  .file-tree .depth-4 { padding-left: 80px; }
-
-  .toggle { cursor: pointer; user-select: none; }
-  .toggle::before { content: '▼ '; color: #58a6ff; font-size: 10px; }
-  .toggle.collapsed::before { content: '▶ '; }
-  .collapsible { overflow: hidden; transition: max-height 0.3s; }
-  .collapsible.collapsed { max-height: 0 !important; }
-
-  .details-row { display: flex; gap: 20px; flex-wrap: wrap; padding: 4px 0; }
-  .details-row dt { color: #8b949e; font-size: 11px; min-width: 100px; }
-  .details-row dd { color: #c9d1d9; font-size: 12px; }
-
-  .principle-list { display: flex; gap: 8px; flex-wrap: wrap; }
-  .principle-list span { background: #1a304a; color: #58a6ff; padding: 4px 12px; border-radius: 14px; font-size: 11px; border: 1px solid #30363d; }
-
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #0d1117; }
-  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+/* ── Responsive tweaks ── */
+@media (max-width: 900px) {
+  #rail { width: 200px; min-width: 200px; }
+  #detail.open { width: 300px; min-width: 300px; }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>farewell-helper <span>v5.0.0</span></h1>
-  <div class="sub">OpenCode (agent) + 9Router (model) + Skills (method) + Farewell (persona) — 4 pillars, one session.</div>
-  <div class="meta">
-    <span><strong>3,043</strong> LOC</span>
-    <span><strong>39</strong> files</span>
-    <span><strong>17</strong> CLI commands</span>
-    <span><strong>4</strong> MCP tools</span>
-    <span><strong>4</strong> skill files</span>
-    <span><strong>2</strong> persona files</span>
+<!-- Rail -->
+<div id="rail">
+  <div id="rail-header">
+    <h1>farewell-helper <span class="ver">v5</span></h1>
+    <div class="sub">OpenCode · 9Router · skills · persona</div>
   </div>
-  <div class="principle-list" style="margin-top: 10px;">
-    <span>KISS</span><span>YAGNI</span><span>Single Source of Truth</span><span>Config = Data</span><span>Enforcement via Mechanism</span>
+  <div id="rail-stats">
+    <div class="stat"><span class="val" id="st-files">39</span> <span class="lbl">files</span></div>
+    <div class="stat"><span class="val" id="st-loc">3,043</span> <span class="lbl">LOC</span></div>
+    <div class="stat"><span class="val" id="st-modules">23</span> <span class="lbl">modules</span></div>
+    <div class="stat"><span class="val" id="st-cmds">17</span> <span class="lbl">commands</span></div>
+  </div>
+  <div id="rail-search"><input id="filter" placeholder="Filter modules..." oninput="filterList(this.value)"></div>
+  <div id="rail-list"></div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div id="graph-area">
+    <svg id="graph-svg"></svg>
+    <div id="graph-hint">click a node to inspect · drag to pan (soon)</div>
   </div>
 </div>
 
-<div class="grid">
-
-  <!-- 4 PILLARS -->
-  <div class="card full">
-    <div class="card-header"><h2>🏛️ 4 Pillars</h2></div>
-    <div class="card-body">
-      <div class="pillar-grid">
-        <div class="pillar" style="border-left: 3px solid #3fb950;">
-          <h3 style="color:#3fb950;">OpenCode</h3>
-          <div class="role">Agent Runtime</div>
-          <ul>
-            <li>2 agents: <strong>build</strong> (full access) + <strong>plan</strong> (read-only)</li>
-            <li>PLAN enforced via <code>permission.edit: deny</code> + <code>permission.bash: deny</code></li>
-            <li>Instructions: <code>PERSONA.md</code> + <code>PROTOCOL.md</code></li>
-            <li>MCP server: <code>py -m farewell_helper.mcp --stdio</code> (4 tools)</li>
-            <li>6 slash commands: /daily /sync /verify /start /health /pre-commit</li>
-          </ul>
-        </div>
-        <div class="pillar" style="border-left: 3px solid #58a6ff;">
-          <h3 style="color:#58a6ff;">9Router</h3>
-          <div class="role">Model Gateway at :20128</div>
-          <ul>
-            <li>Auth via <code>NINEROUTER_API_KEY</code> env var</li>
-            <li>4 combo tiers: FREE_Model, Pro_Plan, Execution_Paid, Execution_Free</li>
-            <li>Simple HTTP client: <code>chat()</code>, <code>models()</code>, <code>ping()</code></li>
-            <li>Source of truth: <code>farewell.combos.jsonc</code> → resolved by <code>sync.py</code></li>
-            <li>Fallback strategy for cache affinity; Round-robin for diversity</li>
-          </ul>
-        </div>
-        <div class="pillar" style="border-left: 3px solid #bc8cff;">
-          <h3 style="color:#bc8cff;">Skills</h3>
-          <div class="role">Engineering Method + Domain Knowledge</div>
-          <ul>
-            <li>4 skill files under <code>skills/</code></li>
-            <li>Trigger: frontmatter <code>description</code> with "Use when..." clause</li>
-            <li><strong>farewell-persona</strong>: identity, YAGNI, push-back</li>
-            <li><strong>farewell-engineering</strong>: TDD, bug fixing, code review</li>
-            <li><strong>farewell-flows</strong>: PLAN/BUILD, handoff, memory, DoD</li>
-            <li><strong>farewell-9router</strong>: combo strategies, model profiles</li>
-          </ul>
-        </div>
-        <div class="pillar" style="border-left: 3px solid #d29922;">
-          <h3 style="color:#d29922;">Farewell Persona</h3>
-          <div class="role">AI Identity + Boss Identity + Protocol</div>
-          <ul>
-            <li><strong>PERSONA.md</strong>: Who AI is, who Boss is, values, YAGNI</li>
-            <li><strong>PROTOCOL.md</strong>: Work modes, precision standard, rules, DoD</li>
-            <li>Memory: MEMORY.md (2.2K chars) + USER.md (1.4K chars) per project</li>
-            <li>Auto-glossary: AUTO-GLOSSARY.md per project</li>
-            <li>Session lineage via lineage.json per project</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+<!-- Detail -->
+<div id="detail">
+  <div id="detail-header">
+    <h2 id="detail-title"></h2>
+    <button id="detail-close" onclick="closeDetail()">✕</button>
   </div>
-
-  <!-- FILE TREE -->
-  <div class="card full">
-    <div class="card-header">
-      <h2>📁 File Tree</h2>
-      <span class="badge bg-green">39 files</span>
-    </div>
-    <div class="card-body file-tree">
-      <div class="depth-0 dir">farewell-helper/</div>
-      <div class="depth-1 file">├─ PERSONA.md</div>
-      <div class="depth-1 file">├─ PROTOCOL.md</div>
-      <div class="depth-1 file">├─ farewell.combos.jsonc</div>
-      <div class="depth-1 file">├─ opencode.template.jsonc</div>
-      <div class="depth-1 file">├─ farewell.json</div>
-      <div class="depth-1 file">├─ pyproject.toml</div>
-      <div class="depth-1 file">├─ README.md</div>
-      <div class="depth-1 file">├─ .gitignore</div>
-      <div class="depth-1 file">├─ .env.example</div>
-      <div class="depth-1 dir">├─ skills/</div>
-      <div class="depth-2 dir">│  ├─ farewell-persona/SKILL.md</div>
-      <div class="depth-2 dir">│  ├─ farewell-engineering/SKILL.md</div>
-      <div class="depth-2 dir">│  ├─ farewell-flows/SKILL.md</div>
-      <div class="depth-2 dir">│  └─ farewell-9router/SKILL.md</div>
-      <div class="depth-1 dir">├─ farewell_helper/</div>
-      <div class="depth-2 file">│  ├─ __init__.py</div>
-      <div class="depth-2 file">│  ├─ __main__.py</div>
-      <div class="depth-2 file highlight">│  ├─ config.py</div>
-      <div class="depth-2 file highlight">│  ├─ helpers.py</div>
-      <div class="depth-2 file highlight">│  ├─ router_client.py</div>
-      <div class="depth-2 file highlight">│  ├─ sync.py</div>
-      <div class="depth-2 file highlight">│  ├─ mcp.py</div>
-      <div class="depth-2 file highlight">│  ├─ verify.py</div>
-      <div class="depth-2 file">│  ├─ archetype.py</div>
-      <div class="depth-2 file">│  ├─ context_manager.py</div>
-      <div class="depth-2 file">│  ├─ cache_monitor.py</div>
-      <div class="depth-2 file">│  ├─ pre_commit.py</div>
-      <div class="depth-2 file">│  ├─ setup_project.py</div>
-      <div class="depth-2 file">│  └─ task_planner.py</div>
-      <div class="depth-2 dir">│  ├─ core/</div>
-      <div class="depth-3 file">│  │  ├─ io.py</div>
-      <div class="depth-3 file">│  │  ├─ memory.py</div>
-      <div class="depth-3 file">│  │  ├─ session.py</div>
-      <div class="depth-3 file">│  │  └─ learning.py</div>
-      <div class="depth-2 dir">│  └─ commands/</div>
-      <div class="depth-3 file">│     ├─ __init__.py</div>
-      <div class="depth-3 file">│     ├─ state.py</div>
-      <div class="depth-3 file">│     ├─ plan.py</div>
-      <div class="depth-3 file">│     ├─ project.py</div>
-      <div class="depth-3 file">│     ├─ memory.py</div>
-      <div class="depth-3 file">│     ├─ handoff_cmd.py</div>
-      <div class="depth-3 file">│     └─ notes_cmd.py</div>
-      <div class="depth-1 dir">├─ .opencode/</div>
-      <div class="depth-1 dir">├─ .farewell/ (gitignored, runtime data)</div>
-      <div class="depth-2 file">│  ├─ active.json</div>
-      <div class="depth-2 file">│  ├─ projects.txt</div>
-      <div class="depth-2 file">│  ├─ metadata.json</div>
-      <div class="depth-2 file">│  ├─ memory/{code}-{name}/MEMORY.md, USER.md, handoff-*.md</div>
-      <div class="depth-2 file">│  ├─ context/{code}-{name}/AUTO-GLOSSARY.md</div>
-      <div class="depth-2 file">│  └─ cache-monitor/{code}-{name}-*.json</div>
-      <div class="depth-0" style="margin-top: 8px; color: #8b949e;">Highlighted = core infrastructure modules</div>
-    </div>
-  </div>
-
-  <!-- CLI COMMANDS -->
-  <div class="card full">
-    <div class="card-header">
-      <h2>⌨️ CLI Commands (17)</h2>
-      <span class="badge bg-blue">entry: farewell_helper.commands:main</span>
-    </div>
-    <div class="card-body">
-      <div class="cmd-grid">
-        <div class="cmd-item"><div class="cmd-name">sync</div><div class="cmd-desc">Sync combos → resolve config template</div></div>
-        <div class="cmd-item"><div class="cmd-name">daily</div><div class="cmd-desc">Verify → sync → health check</div></div>
-        <div class="cmd-item"><div class="cmd-name">status</div><div class="cmd-desc">Show current state</div></div>
-        <div class="cmd-item"><div class="cmd-name">verify</div><div class="cmd-desc">Verify persona + skill + 9Router</div></div>
-        <div class="cmd-item"><div class="cmd-name">start</div><div class="cmd-desc">Validate persona + project + 9Router</div></div>
-        <div class="cmd-item"><div class="cmd-name">init</div><div class="cmd-desc">Bootstrap: verify + sync + health</div></div>
-        <div class="cmd-item"><div class="cmd-name">memory</div><div class="cmd-desc">View/edit MEMORY.md &amp; USER.md</div></div>
-        <div class="cmd-item"><div class="cmd-name">sessions</div><div class="cmd-desc">Session history per project</div></div>
-        <div class="cmd-item"><div class="cmd-name">setup-project</div><div class="cmd-desc">Register external repo</div></div>
-        <div class="cmd-item"><div class="cmd-name">notes</div><div class="cmd-desc">Manage glossary terms</div></div>
-        <div class="cmd-item"><div class="cmd-name">handoff</div><div class="cmd-desc">Show/save/list/search/export</div></div>
-        <div class="cmd-item"><div class="cmd-name">project</div><div class="cmd-desc">List/switch/unregister/status</div></div>
-        <div class="cmd-item"><div class="cmd-name">pre-commit</div><div class="cmd-desc">Quality gate: tests + TODO check</div></div>
-        <div class="cmd-item"><div class="cmd-name">todo</div><div class="cmd-desc">TODO.md CRUD</div></div>
-        <div class="cmd-item"><div class="cmd-name">done</div><div class="cmd-desc">Auto-compress: commit → push → handoff</div></div>
-        <div class="cmd-item"><div class="cmd-name">health</div><div class="cmd-desc">Full health report</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODULE DEPENDENCIES -->
-  <div class="card full">
-    <div class="card-header">
-      <h2>🧩 Module Dependency Map (25 Python modules)</h2>
-      <span class="badge bg-purple">stdlib only — zero external deps</span>
-    </div>
-    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
-      <div class="module-list">
-        <div class="module-row"><span class="m-name">config.py</span><span class="m-loc">27</span><span class="m-desc">Global paths + env access + persona list</span><span class="m-dep">stdlib</span></div>
-        <div class="module-row"><span class="m-name">helpers.py</span><span class="m-loc">43</span><span class="m-desc">Colored CLI output (ok/fail/warn/info/c)</span><span class="m-dep">stdlib</span></div>
-        <div class="module-row"><span class="m-name">router_client.py</span><span class="m-loc">44</span><span class="m-desc">9Router HTTP: chat, models, ping</span><span class="m-dep">config.py</span></div>
-        <div class="module-row"><span class="m-name">sync.py</span><span class="m-loc">37</span><span class="m-desc">Read combos.jsonc → resolve template</span><span class="m-dep">config.py</span></div>
-        <div class="module-row"><span class="m-name">mcp.py</span><span class="m-loc">118</span><span class="m-desc">MCP server: 4 tools over stdio</span><span class="m-dep">config.py</span></div>
-        <div class="module-row"><span class="m-name">verify.py</span><span class="m-loc">80</span><span class="m-desc">Persona + config + skills + 9Router verify</span><span class="m-dep">config.py, router_client.py</span></div>
-        <div class="module-row"><span class="m-name">archetype.py</span><span class="m-loc">153</span><span class="m-desc">Stack detection from file markers</span><span class="m-dep">config.py</span></div>
-        <div class="module-row"><span class="m-name">context_manager.py</span><span class="m-loc">76</span><span class="m-desc">AUTO-GLOSSARY.md per project</span><span class="m-dep">config.py</span></div>
-        <div class="module-row"><span class="m-name">cache_monitor.py</span><span class="m-loc">191</span><span class="m-desc">Token tracking + context budget</span><span class="m-dep">config.py</span></div>
-        <div class="module-row"><span class="m-name">pre_commit.py</span><span class="m-loc">36</span><span class="m-desc">pytest + TODO/FIXME scanner</span><span class="m-dep">config.py</span></div>
-        <div class="module-row"><span class="m-name">setup_project.py</span><span class="m-loc">176</span><span class="m-desc">External repo registration + .farewell inject</span><span class="m-dep">config, archetype, context_manager</span></div>
-        <div class="module-row"><span class="m-name">task_planner.py</span><span class="m-loc">167</span><span class="m-desc">Goal → tickets decomposition</span><span class="m-dep">config, archetype</span></div>
-        <div class="module-row"><span class="m-name">core/io.py</span><span class="m-loc">25</span><span class="m-desc">Atomic JSON read/write</span><span class="m-dep">stdlib</span></div>
-        <div class="module-row"><span class="m-name">core/memory.py</span><span class="m-loc">68</span><span class="m-desc">MEMORY.md + USER.md per project</span><span class="m-dep">config, core/io</span></div>
-        <div class="module-row"><span class="m-name">core/session.py</span><span class="m-loc">79</span><span class="m-desc">Session lifecycle + handoff generation</span><span class="m-dep">config, core/io</span></div>
-        <div class="module-row"><span class="m-name">core/learning.py</span><span class="m-loc">133</span><span class="m-desc">Pattern + glossary extraction from handoffs</span><span class="m-dep">config</span></div>
-        <div class="module-row"><span class="m-name">commands/__init__.py</span><span class="m-loc">301</span><span class="m-desc">Argparse CLI → 17 subcommands</span><span class="m-dep">all modules</span></div>
-        <div class="module-row"><span class="m-name">commands/state.py</span><span class="m-loc">102</span><span class="m-desc">status, verify, health</span><span class="m-dep">verify, router_client, core/memory</span></div>
-        <div class="module-row"><span class="m-name">commands/plan.py</span><span class="m-loc">194</span><span class="m-desc">todo + done (auto-compress)</span><span class="m-dep">core/memory, core/session, pre_commit</span></div>
-        <div class="module-row"><span class="m-name">commands/project.py</span><span class="m-loc">164</span><span class="m-desc">Project registry: CRUD + active tracking</span><span class="m-dep">config, archetype, setup_project</span></div>
-        <div class="module-row"><span class="m-name">commands/memory.py</span><span class="m-loc">90</span><span class="m-desc">Memory show/edit/save + sessions</span><span class="m-dep">core/memory, core/session</span></div>
-        <div class="module-row"><span class="m-name">commands/handoff_cmd.py</span><span class="m-loc">81</span><span class="m-desc">Handoff CRUD + search/export</span><span class="m-dep">core/session, core/memory, config</span></div>
-        <div class="module-row"><span class="m-name">commands/notes_cmd.py</span><span class="m-loc">27</span><span class="m-desc">Glossary show/add</span><span class="m-dep">context_manager</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- DATA FLOWS -->
-  <div class="card full">
-    <div class="card-header"><h2>🔄 Key Data Flows</h2></div>
-    <div class="card-body">
-      <div class="flow-grid">
-        <div class="flow-card">
-          <h3>🚀 Session Start</h3>
-          <ol>
-            <li>OpenCode loads <strong>PERSONA.md</strong> + <strong>PROTOCOL.md</strong> as instructions</li>
-            <li><code>/start</code> verifies persona files exist</li>
-            <li>Pings 9Router health endpoint</li>
-            <li>Shows active project context</li>
-            <li>AI reads persona → knows who they are + who Boss is</li>
-          </ol>
-        </div>
-        <div class="flow-card">
-          <h3>📅 Daily Check</h3>
-          <ol>
-            <li><code>/daily</code>: verify persona</li>
-            <li><code>sync</code>: read <strong>farewell.combos.jsonc</strong></li>
-            <li>Resolve <code>${PLACEHOLDER}</code>s in <strong>opencode.template.jsonc</strong></li>
-            <li>Write <strong>opencode.jsonc</strong></li>
-            <li>Ping 9Router → report health</li>
-          </ol>
-        </div>
-        <div class="flow-card">
-          <h3>📝 Handoff Cycle</h3>
-          <ol>
-            <li><code>done</code>: pre-commit check → git add → git commit → git push</li>
-            <li><code>generate_handoff()</code>: writes <code>.farewell/memory/{code}-{name}/handoff-*.md</code></li>
-            <li>Updates MEMORY.md with session summary</li>
-            <li>Archives TODO.md, creates fresh task list</li>
-            <li>Next session: <code>last_handoff()</code> resumes from last handoff</li>
-          </ol>
-        </div>
-        <div class="flow-card">
-          <h3>🏗️ Multi-Repo</h3>
-          <ol>
-            <li><code>setup-project /path/to/repo</code>: detects archetype, injects <code>.farewell/</code></li>
-            <li>Registers in <code>.farewell/projects.txt</code></li>
-            <li><code>project switch &lt;code&gt;</code>: switches active project context</li>
-            <li>Each project has isolated MEMORY.md, USER.md, AUTO-GLOSSARY.md</li>
-            <li>Zero footprint on target repo (only .farewell/ dir)</li>
-          </ol>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RUNTIME DATA -->
-  <div class="card full">
-    <div class="card-header"><h2>🗃️ Runtime Data (.farewell/)</h2></div>
-    <div class="card-body">
-      <div class="flow-grid">
-        <div class="flow-card">
-          <h3>active.json</h3>
-          <div style="font-size:12px;color:#8b949e;">Current active project code + name</div>
-          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">{"code":"001","name":"farewell-helper"}</pre>
-        </div>
-        <div class="flow-card">
-          <h3>projects.txt</h3>
-          <div style="font-size:12px;color:#8b949e;">Registered sub-projects list</div>
-          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">001|farewell-helper
-002|service-hub</pre>
-        </div>
-        <div class="flow-card">
-          <h3>memory/{code}-{name}/</h3>
-          <div style="font-size:12px;color:#8b949e;">Per-project memory + lineage + handoffs</div>
-          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">MEMORY.md       (2.2K chars max)
-USER.md         (1.4K chars max)
-lineage.json    (session history)
-handoff-*.md    (session handoffs)</pre>
-        </div>
-        <div class="flow-card">
-          <h3>context/{code}-{name}/</h3>
-          <div style="font-size:12px;color:#8b949e;">Auto-glossary + ADRs</div>
-          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">AUTO-GLOSSARY.md (domain terms)
-ADR-*.md        (architecture decisions)</pre>
-        </div>
-        <div class="flow-card">
-          <h3>cache-monitor/</h3>
-          <div style="font-size:12px;color:#8b949e;">Token usage tracking</div>
-          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">{code}-{name}-session.json
-{code}-{name}-{YYYYMMDD}.json</pre>
-        </div>
-        <div class="flow-card">
-          <h3>metadata.json</h3>
-          <div style="font-size:12px;color:#8b949e;">Project metadata (created, accessed, sync, stack)</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- AGENT ONBOARDING -->
-  <div class="card full">
-    <div class="card-header"><h2>🤖 For the Next AI Agent</h2></div>
-    <div class="card-body">
-      <div class="flow-grid">
-        <div class="flow-card">
-          <h3>📖 Read First</h3>
-          <ol>
-            <li><code>PERSONA.md</code> — who you are, who Boss is</li>
-            <li><code>PROTOCOL.md</code> — how to work, PLAN/BUILD rules</li>
-            <li><code>farewell.combos.jsonc</code> — model combo config</li>
-            <li><code>opencode.template.jsonc</code> — agent config template</li>
-            <li><code>ARCHITECTURE.json</code> — this codebase in JSON</li>
-          </ol>
-        </div>
-        <div class="flow-card">
-          <h3>🛠️ Common Tasks</h3>
-          <ul>
-            <li><strong>Add CLI command</strong>: <code>commands/__init__.py</code> parser + impl in <code>commands/</code></li>
-            <li><strong>Add MCP tool</strong>: <code>mcp.py</code> TOOLS list + _CMD_MAP</li>
-            <li><strong>Add 9Router API</strong>: <code>router_client.py</code> new function</li>
-            <li><strong>Add combo tier</strong>: <code>farewell.combos.jsonc</code> + template placeholder</li>
-            <li><strong>Add skill</strong>: <code>skills/{name}/SKILL.md</code> with frontmatter</li>
-            <li><strong>Write tests</strong>: <code>tests/test_*.py</code>, run with <code>pytest</code></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="card full" style="text-align:center;border-color:#21262d;">
-    <div class="card-body" style="color:#8b949e;font-size:12px;">
-      <strong>ARCHITECTURE.html</strong> — Self-contained architecture map. Generated from codebase analysis.<br>
-      <strong>ARCHITECTURE.json</strong> — Structured representation for AI agent consumption.<br>
-      <code>farewell-helper v5.0.0</code> — 4 pillars. One session. KISS.
-    </div>
-  </div>
-
+  <div id="detail-body"></div>
 </div>
 
 <script>
-  document.querySelectorAll('.toggle').forEach(el => {
-    el.addEventListener('click', () => {
-      el.classList.toggle('collapsed');
-      const target = document.getElementById(el.dataset.target);
-      if (target) target.classList.toggle('collapsed');
+// ── Data ──
+const DATA = {
+  modules: [
+    { id:"__init__", name:"__init__.py", path:"farewell_helper/", loc:2, type:"core", purpose:"Package init + version", exports:["__version__"], deps:[], depsBy:[], icon:"core" },
+    { id:"__main__", name:"__main__.py", path:"farewell_helper/", loc:2, type:"core", purpose:"CLI entry", exports:["main()"], deps:["commands"], depsBy:[], icon:"core" },
+    { id:"config", name:"config.py", path:"farewell_helper/", loc:27, type:"core", purpose:"Global paths + env + persona list", exports:["ROOT_DIR","get_api_key()","router_base_url()","persona_files()"], deps:[], depsBy:["router_client","sync","mcp","verify","archetype","setup_project","commands*"], icon:"core" },
+    { id:"helpers", name:"helpers.py", path:"farewell_helper/", loc:43, type:"core", purpose:"CLI output: ok/fail/warn/info/c", exports:["c()","ok()","fail()","warn()","info()"], deps:[], depsBy:["*"], icon:"core" },
+    { id:"router_client", name:"router_client.py", path:"farewell_helper/", loc:44, type:"core", purpose:"9Router HTTP: chat, models, ping", exports:["chat()","models()","ping()"], deps:["config"], depsBy:["verify","commands*"], icon:"core" },
+    { id:"sync", name:"sync.py", path:"farewell_helper/", loc:37, type:"core", purpose:"Combos -> template resolver", exports:["render()"], deps:["config"], depsBy:["commands*"], icon:"core" },
+    { id:"mcp", name:"mcp.py", path:"farewell_helper/", loc:118, type:"core", purpose:"MCP JSON-RPC 2.0 server (4 tools)", exports:["main()","serve()"], deps:["config"], depsBy:[], icon:"core" },
+    { id:"verify", name:"verify.py", path:"farewell_helper/", loc:80, type:"core", purpose:"Persona+config+skills+9Router verify", exports:["verify()"], deps:["config","router_client"], depsBy:["commands*"], icon:"core" },
+    { id:"archetype", name:"archetype.py", path:"farewell_helper/", loc:153, type:"domain", purpose:"Stack detection from file markers", exports:["detect()","save_archetype()"], deps:["config"], depsBy:["setup_project","task_planner","commands*"], icon:"domain" },
+    { id:"context_manager", name:"context_manager.py", path:"farewell_helper/", loc:76, type:"domain", purpose:"AUTO-GLOSSARY.md per project", exports:["add_glossary_term()","context_content()"], deps:["config"], depsBy:["setup_project","commands*"], icon:"domain" },
+    { id:"cache_monitor", name:"cache_monitor.py", path:"farewell_helper/", loc:191, type:"domain", purpose:"Token tracking + context budget", exports:["get_daily_stats()","get_session_context_budget()"], deps:["config"], depsBy:[], icon:"domain" },
+    { id:"pre_commit", name:"pre_commit.py", path:"farewell_helper/", loc:36, type:"domain", purpose:"pytest + TODO/FIXME scanner", exports:["check()"], deps:["config"], depsBy:["commands*"], icon:"domain" },
+    { id:"setup_project", name:"setup_project.py", path:"farewell_helper/", loc:176, type:"domain", purpose:"External repo registration + .farewell inject", exports:["analyze()","update_metadata()"], deps:["config","archetype","context_manager"], depsBy:["commands*"], icon:"domain" },
+    { id:"task_planner", name:"task_planner.py", path:"farewell_helper/", loc:167, type:"domain", purpose:"Goal -> tickets decomposition", exports:["classify_goal()","decompose()"], deps:["config","archetype"], depsBy:[], icon:"domain" },
+    { id:"core_io", name:"core/io.py", path:"farewell_helper/core/", loc:25, type:"core", purpose:"Atomic JSON read/write", exports:["read_json()","write_json()"], deps:[], depsBy:["core_memory","core_session"], icon:"core" },
+    { id:"core_memory", name:"core/memory.py", path:"farewell_helper/core/", loc:68, type:"core", purpose:"MEMORY.md + USER.md per project", exports:["memory_content()","save_memory()"], deps:["config","core_io"], depsBy:["commands*"], icon:"core" },
+    { id:"core_session", name:"core/session.py", path:"farewell_helper/core/", loc:79, type:"core", purpose:"Session lifecycle + handoff", exports:["start_session()","generate_handoff()"], deps:["config","core_io"], depsBy:["commands*"], icon:"core" },
+    { id:"core_learning", name:"core/learning.py", path:"farewell_helper/core/", loc:133, type:"domain", purpose:"Pattern extraction from handoffs", exports:["detect_patterns()","auto_extract()"], deps:["config"], depsBy:[], icon:"domain" },
+    { id:"commands_init", name:"commands/__init__.py", path:"farewell_helper/commands/", loc:301, type:"cli", purpose:"Argparse -> 17 subcommands", exports:["main()"], deps:["config","sync","verify","router_client","pre_commit","archetype","setup_project","project","plan","state","handoff_cmd","notes_cmd","memory","core/*"], depsBy:[], icon:"cli" },
+    { id:"commands_state", name:"commands/state.py", path:"farewell_helper/commands/", loc:102, type:"cli", purpose:"status, verify, health commands", exports:["status()","verify()","health()"], deps:["config","verify","router_client","project"], depsBy:["commands_init"], icon:"cli" },
+    { id:"commands_plan", name:"commands/plan.py", path:"farewell_helper/commands/", loc:194, type:"cli", purpose:"todo + done (auto-compress)", exports:["todo()","done()"], deps:["config","project","core/*","pre_commit"], depsBy:["commands_init"], icon:"cli" },
+    { id:"commands_project", name:"commands/project.py", path:"farewell_helper/commands/", loc:164, type:"cli", purpose:"Project registry: CRUD + active", exports:["cmd_project()","get_active()","set_active()"], deps:["config","archetype","setup_project"], depsBy:["commands_init","commands/state","commands/plan","commands/handoff_cmd"], icon:"cli" },
+    { id:"commands_handoff", name:"commands/handoff_cmd.py", path:"farewell_helper/commands/", loc:81, type:"cli", purpose:"Handoff CRUD + search/export", exports:["handoff()"], deps:["config","core/*","project"], depsBy:["commands_init"], icon:"cli" },
+    { id:"commands_notes", name:"commands/notes_cmd.py", path:"farewell_helper/commands/", loc:27, type:"cli", purpose:"Glossary show/add", exports:["notes()"], deps:["context_manager"], depsBy:["commands_init"], icon:"cli" },
+    { id:"commands_memory", name:"commands/memory.py", path:"farewell_helper/commands/", loc:90, type:"cli", purpose:"Memory show/edit/save + sessions", exports:["cmd_memory()","cmd_sessions()"], deps:["core/*"], depsBy:["commands_init"], icon:"cli" }
+  ],
+  commands: [
+    { name:"sync", desc:"Sync combos -> resolve config" },
+    { name:"daily", desc:"Verify -> sync -> health" },
+    { name:"status", desc:"Current state" },
+    { name:"verify", desc:"Verify persona + skill + 9Router" },
+    { name:"start", desc:"Validate persona + project" },
+    { name:"init", desc:"Bootstrap: verify + sync + health" },
+    { name:"memory", desc:"View/edit MEMORY.md + USER.md" },
+    { name:"sessions", desc:"Session history" },
+    { name:"setup-project", desc:"Register external repo" },
+    { name:"notes", desc:"Manage glossary" },
+    { name:"handoff", desc:"Show/save/list/search/export" },
+    { name:"project", desc:"List/switch/unregister/status" },
+    { name:"pre-commit", desc:"Quality gate" },
+    { name:"todo", desc:"TODO.md CRUD" },
+    { name:"done", desc:"Auto-compress: commit+push+handoff" },
+    { name:"health", desc:"Full health report" }
+  ]
+};
+
+// ── Graph layout ──
+const PILLARS = [
+  { id:"opencode", label:"OpenCode", color:"var(--accent)", modules:["mcp","commands_init","commands_state","commands_plan","commands_project","commands_handoff","commands_notes","commands_memory"], x:0.5, y:0.08 },
+  { id:"ninerouter", label:"9Router", color:"var(--blue)", modules:["router_client","sync","verify"], x:0.15, y:0.45 },
+  { id:"skills", label:"Skills", color:"var(--purple)", modules:["archetype","task_planner","context_manager","cache_monitor","pre_commit","setup_project","core_learning"], x:0.85, y:0.45 },
+  { id:"persona", label:"Persona", color:"#d29922", modules:["config","helpers","core_io","core_memory","core_session","__init__","__main__"], x:0.5, y:0.82 }
+];
+
+const NODE_W = 130, NODE_H = 32;
+let selectedId = null;
+
+function layout() {
+  const modules = DATA.modules;
+  const modMap = {};
+  modules.forEach(m => modMap[m.id] = m);
+  PILLARS.forEach(p => {
+    p.modules.forEach((mid, i) => {
+      const row = Math.floor(i / 3), col = i % 3;
+      const count = p.modules.length;
+      const cols = Math.min(count, 3);
+      const startX = p.x - (cols-1) * 0.11;
+      m = modMap[mid];
+      if (m) { m._px = startX + col * 0.11; m._py = p.y + row * 0.075; m._pillar = p.id; }
     });
   });
+  return modMap;
+}
+
+function renderGraph() {
+  const svg = document.getElementById('graph-svg');
+  const W = svg.clientWidth || 900, H = svg.clientHeight || 600;
+  const pad = 80;
+  const modMap = layout();
+  const modules = DATA.modules;
+
+  let html = `<defs><marker id="arrow" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L6,3 L0,6" class="edge-arrow"/></marker></defs>`;
+
+  // Edges
+  const edgeSet = new Set();
+  modules.forEach(m => {
+    (m.deps || []).forEach(d => {
+      const targetId = d.replace('*','').trim();
+      const target = modMap[targetId] || modMap[Object.keys(modMap).find(k => k.startsWith(targetId))];
+      if (target && m._px && target._px) {
+        const key = [m.id, target.id].sort().join('>');
+        if (!edgeSet.has(key)) {
+          edgeSet.add(key);
+          const x1 = m._px * (W-2*pad) + pad, y1 = m._py * (H-2*pad) + pad;
+          const x2 = target._px * (W-2*pad) + pad, y2 = target._py * (H-2*pad) + pad;
+          const dx = x2-x1, dy = y2-y1;
+          const len = Math.sqrt(dx*dx+dy*dy);
+          const off = NODE_H/2 + 4;
+          const nx = dx/len * off, ny = dy/len * off;
+          html += `<line x1="${x1+nx}" y1="${y1+ny}" x2="${x2-nx}" y2="${y2-ny}" class="edge-line" marker-end="url(#arrow)"/>`;
+        }
+      }
+    });
+  });
+
+  // Nodes
+  modules.forEach(m => {
+    if (!m._px) return;
+    const x = m._px * (W-2*pad) + pad - NODE_W/2;
+    const y = m._py * (H-2*pad) + pad - NODE_H/2;
+    const active = selectedId === m.id;
+    html += `<g class="node" data-id="${m.id}" onclick="selectNode('${m.id}')" style="cursor:pointer">`;
+    html += `<rect class="node-bg ${active?'active':''}" x="${x}" y="${y}" width="${NODE_W}" height="${NODE_H}" rx="4"/>`;
+    const short = m.name.replace('.py','');
+    html += `<text class="node-label" x="${x+NODE_W/2}" y="${y+NODE_H/2-3}">${short}</text>`;
+    html += `<text class="node-sublabel" x="${x+NODE_W/2}" y="${y+NODE_H/2+11}">${m.loc} LOC</text>`;
+    html += `</g>`;
+  });
+
+  // Pillar labels
+  PILLARS.forEach(p => {
+    const x = p.x * (W-2*pad) + pad;
+    const y = p.y * (H-2*pad) + pad - 40;
+    html += `<text x="${x}" y="${y}" text-anchor="middle" fill="${p.color}" font-size="10" font-weight="600" text-transform="uppercase" letter-spacing="0.1em" opacity="0.6">${p.label}</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+// ── Rail list ──
+function renderRail(filter) {
+  const el = document.getElementById('rail-list');
+  const f = (filter||'').toLowerCase();
+  let html = '';
+  const sections = [
+    { label:'CLI Commands', items: DATA.commands.map(c => ({ id:'cmd:'+c.name, name:c.name, meta:'', desc:c.desc, icon:'cli', section:'cmd' })) },
+    { label:'Core Modules', items: DATA.modules.filter(m => m.icon==='core').map(m => ({ id:m.id, name:m.name, meta:m.loc+' LOC', desc:m.purpose, icon:'core', section:'mod' })) },
+    { label:'Domain Modules', items: DATA.modules.filter(m => m.icon==='domain').map(m => ({ id:m.id, name:m.name, meta:m.loc+' LOC', desc:m.purpose, icon:'domain', section:'mod' })) },
+    { label:'Commands', items: DATA.modules.filter(m => m.icon==='cli').map(m => ({ id:m.id, name:m.name, meta:m.loc+' LOC', desc:m.purpose, icon:'cli', section:'mod' })) }
+  ];
+  sections.forEach(s => {
+    const items = s.items.filter(i => !f || i.name.toLowerCase().includes(f) || (i.desc||'').toLowerCase().includes(f));
+    if (!items.length) return;
+    html += `<div class="rail-section">${s.label}</div>`;
+    items.forEach(i => {
+      const active = selectedId === i.id;
+      html += `<div class="rail-item ${active?'active':''}" onclick="selectNode('${i.id}')">`;
+      const ic = { cli:'var(--primary)', core:'var(--accent)', domain:'var(--purple)', cmd:'var(--blue)' }[i.icon] || 'var(--muted)';
+      html += `<span class="icon" style="background:${ic}"></span>`;
+      html += `<span class="name">${i.name}</span>`;
+      if (i.meta) html += `<span class="meta">${i.meta}</span>`;
+      html += `</div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+function filterList(v) { renderRail(v); }
+
+// ── Detail panel ──
+function selectNode(id) {
+  selectedId = id;
+  renderRail(document.getElementById('filter').value);
+  renderGraph();
+
+  const detail = document.getElementById('detail');
+  const title = document.getElementById('detail-title');
+  const body = document.getElementById('detail-body');
+
+  // Command detail
+  if (id.startsWith('cmd:')) {
+    const cmd = DATA.commands.find(c => 'cmd:'+c.name === id);
+    if (!cmd) return;
+    detail.classList.add('open');
+    title.textContent = cmd.name;
+    body.innerHTML = `
+      <div class="kv"><dt>Command</dt><dd><code>farewell-helper ${cmd.name}</code></dd></div>
+      <div class="kv"><dt>Description</dt><dd>${cmd.desc}</dd></div>
+    `;
+    return;
+  }
+
+  // Module detail
+  const m = DATA.modules.find(x => x.id === id);
+  if (!m) return;
+  detail.classList.add('open');
+  title.textContent = m.name;
+  const tagClass = { core:'tag-core', cli:'tag-cli', domain:'tag-py', config:'tag-config' }[m.icon] || 'tag-core';
+  let html = `<div><span class="tag ${tagClass}">${m.icon}</span></div>`;
+  html += `<div class="kv"><dt>Path</dt><dd><code>${m.path}${m.name}</code></dd></div>`;
+  html += `<div class="kv"><dt>LOC</dt><dd>${m.loc}</dd></div>`;
+  html += `<div class="kv"><dt>Purpose</dt><dd>${m.purpose}</dd></div>`;
+
+  if (m.exports && m.exports.length) {
+    html += `<h3>Exports</h3>`;
+    m.exports.forEach(e => { html += `<div><code>${e}</code></div>`; });
+  }
+
+  if (m.deps && m.deps.length) {
+    html += `<h3>Depends On</h3>`;
+    m.deps.forEach(d => { html += `<div><code>${d}</code></div>`; });
+  }
+
+  body.innerHTML = html;
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+  selectedId = null;
+  renderRail();
+  renderGraph();
+}
+
+// ── Init ──
+window.addEventListener('resize', renderGraph);
+renderRail();
+renderGraph();
 </script>
 </body>
 </html>
