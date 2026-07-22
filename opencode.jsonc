@@ -52,6 +52,42 @@
             "context": 1000000,
             "output": 128000
           }
+        },
+        "Pro": {
+          "name": "Pro",
+          "reasoning": true,
+          "tool_call": true,
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          }
+        },
+        "Flash": {
+          "name": "Flash",
+          "reasoning": true,
+          "tool_call": true,
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          }
+        },
+        "FREE_OC": {
+          "name": "FREE_OC",
+          "reasoning": true,
+          "tool_call": true,
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          }
+        },
+        "FREE_OR": {
+          "name": "FREE_OR",
+          "reasoning": true,
+          "tool_call": true,
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          }
         }
       }
     }
@@ -122,6 +158,13 @@
       "environment": {
         "PYTHONUNBUFFERED": "1"
       }
+    },
+    "codebase-memory": {
+      "type": "local",
+      "command": [
+        "codebase-memory-mcp"
+      ],
+      "enabled": true
     }
   },
   "skills": {
