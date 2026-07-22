@@ -1,69 +1,58 @@
 ---
 name: farewell-audit
-description: Use when studying a new codebase, learning from external project source, or understanding how something works before building on it — deep code forensics, per-file analysis. Leverages codebase-memory-mcp knowledge graph when available.
+description: Use when studying a new codebase, learning from external project source, or understanding how something works before building on it — deep code forensics powered by Codebase-Memory knowledge graph.
 ---
 
-# Code Audit — Per-File Deep Analysis
+# Code Audit — Knowledge Graph + Deep Analysis
 
-Study a codebase file by file, layer by layer. Build a mental model of how everything connects.
+Study any codebase thoroughly. Prefer Codebase-Memory MCP for structural queries (120x fewer tokens, 2.1x fewer tool calls). Fall back to per-file reading only when the graph doesn't cover what you need.
 
-**If `codebase-memory-mcp` is installed**, index the project first (`Index this project` or `codebase-memory-mcp index`), then use its MCP tools for structural queries (trace call chains, find dead code, map HTTP routes, query the knowledge graph). This is 120x more token-efficient than manual grep/read.
+## Phase 0: Index (Once Per Project)
 
-## Phase 0: Index (when codebase-memory-mcp available)
+Tell the agent: "Index this project." Codebase-Memory indexes the entire codebase into a persistent knowledge graph — functions, classes, call chains, HTTP routes, dependencies. Linux kernel (28M LOC) takes 3 minutes. Small projects take milliseconds. The graph survives across sessions.
 
-Index the project. This creates a persistent knowledge graph of functions, classes, call chains, and dependencies. Run once per project. The graph survives across sessions.
+## Phase 1: Structural Queries (Prefer These)
 
-## Phase 1: File Inventory
+Use Codebase-Memory MCP tools instead of grep/read:
 
-Walk directory tree. List every source file with path, line count, and one-line purpose. Tag each: `[entry]` main/start, `[core]` logic, `[util]` helpers, `[config]`, `[test]`.
+| Question | Tool | Why |
+|----------|------|-----|
+| "What does this function call?" | `trace_call_chain` | Instant graph traversal |
+| "What calls this function?" | `find_callers` | Reverse dependency lookup |
+| "What HTTP routes exist?" | `list_http_routes` | Auto-extracted from code |
+| "Any dead code?" | `find_dead_code` | Functions with zero callers |
+| "How are modules connected?" | `query_knowledge_graph` | Cypher-style graph query |
+| "Architecture overview?" | `get_architecture` | Module dependency map |
+| "What would break if I change X?" | `impact_analysis` | Forward dependency trace |
 
-## Phase 2: Per-File Deep Read
+## Phase 2: Per-File Deep Read (Fallback)
 
-For each non-trivial file (>20 lines, core/util):
+When the knowledge graph doesn't cover something (complex logic, algorithms, comments), read specific files:
+
 - **Imports** — what does it depend on?
 - **Exports** — what does it provide?
 - **Main function** — entry point, algorithm sketch
 - **Data structures** — key classes, types, enums
 - **Side effects** — network, disk, DB, env vars
 
-## Phase 3: Cross-File Trace
-
-Pick the primary flow. Trace it through files: entry → handler → service → repository → DB. Map the call chain.
-
-## Phase 4: Pattern Extraction
+## Phase 3: Pattern Extraction
 
 For each reusable mechanism, answer:
 - What problem does it solve?
-- How is it implemented? (algorithm, data structure)
-- Why was it done this way? (trade-offs)
-- Can this pattern be reused elsewhere?
+- How is it implemented?
+- Why was it done this way?
+- Can this pattern be reused?
 
-## Phase 5: Report
+## Phase 4: Report
 
 Generate `docs/audit-<project>.md`:
 
 ```markdown
 # Audit: <project>
 
-## File Inventory
-| File | Lines | Role | Purpose |
-
-## Key Flows
-### Flow: <name>
-<file-1>:<function> → <file-2>:<function> → ...
-
+## Architecture (from knowledge graph)
+## Key Flows (from trace_call_chain)
+## Dead Code (from find_dead_code)
 ## Patterns Worth Keeping
-### <Pattern Name>
-- What: ...
-- How: ...
-- Why: ...
-- Reusable as: ...
-
-## Architecture Notes
 ## What I'd Do Differently
 ```
-
-Rules:
-- One file at a time. Don't guess — read the file.
-- Flag anything interesting: unusual patterns, clever hacks, anti-patterns.
-- Boss can interrupt and ask "explain X deeper."
