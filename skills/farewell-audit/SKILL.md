@@ -1,31 +1,48 @@
 ---
 name: farewell-audit
-description: Use when Boss says "audit", "review this project", "is this ready", or wants a comprehensive assessment — runs security, quality, production, and workspace checks in one pass.
+description: Use when studying a new codebase, learning from external project source, or understanding how something works before building on it — deep code forensics for comprehension and reuse.
 ---
 
-# Project Audit
+# Code Audit — Understand Any Project
 
-Single entry point for all project checks. Runs each domain independently, aggregates findings by severity.
+Study a codebase thoroughly: what it does, how it works, and what you can learn from it. Use before building something similar or integrating external code.
 
-## Audit Domains
+## Phase 1: Map The Surface
 
-**1. Security** — hardcoded secrets in any file, `.env` in `.gitignore`, no default passwords, API keys in environment not source, input validation at all trust boundaries, error messages don't leak stack traces.
+Walk the directory tree. Note: entry points (`main.py`, `index.ts`, `main.dart`), config files, package manifests, build scripts, test directories. Answer: what language, what framework, what dependencies, what's the project's single purpose?
 
-**2. Code Quality** — run `farewell-tdd` Phase 2 review on recent diff. Check: naming clarity, no TODO/FIXME, immutability, error handling, no silent swallows, no deep nesting (>4 levels), files under 800 lines.
+## Phase 2: Trace The Core Flow
 
-**3. Production Readiness** — health check endpoint, graceful shutdown, rate limiting, CORS locked, migrations reversible, rollback tested, logs to stdout/stderr, resource limits set.
+Pick the primary user action (startup, main request, key feature). Trace it end-to-end: where does execution start, what functions are called, what data flows through, where does it end. Draw a mental call graph. Identify: request lifecycle, state machine, error paths, exit points.
 
-**4. Workspace** — `.farewell/` exists, `AUTO-GLOSSARY.md` populated, skills match detected stack, `.env.example` present, CI/CD configured, test runner exists, linter configured.
+## Phase 3: Extract Mechanisms
 
-## Output Format
+For each non-trivial component, answer:
+- **What does it do?** — one sentence.
+- **How does it do it?** — algorithm, data structure, pattern.
+- **Why was it done this way?** — what constraint or trade-off drove this choice.
+- **Could it be reused?** — is this a generic pattern or project-specific?
 
-Report each finding as:
+## Phase 4: Map Dependencies
+
+What does this project depend on externally? (libraries, APIs, databases). What depends on it internally? (callers, consumers, inheritance chains). Where are the boundaries between modules?
+
+## Phase 5: Identify Reusable Pieces
+
+Extract patterns, algorithms, and architectural decisions that apply beyond this project. Document them in the project's `AUTO-GLOSSARY.md` or as ADRs. Ask: "If I were to build something similar, which pieces would I take and which would I redesign?"
+
+## Output
+
+Generate `docs/audit-<project>.md`:
+```markdown
+# Audit: <project>
+
+## Purpose
+## Architecture
+## Key Mechanisms (one per section: what, how, why, reusable?)
+## Dependencies
+## Entry Points
+## Data Flow
+## Patterns Worth Keeping
+## What I'd Do Differently
 ```
-[severity] [domain] finding
-```
-
-Severity: `CRITICAL` (ship blocker), `HIGH` (fix before next release), `MEDIUM` (fix this sprint), `LOW` (nice to have).
-
-## Aggregation
-
-Show summary: total findings per severity. List CRITICAL first. End with: "Top 3 fixes that would most improve this project."
