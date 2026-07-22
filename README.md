@@ -73,6 +73,16 @@ farewell-helper/
 
 If you see warnings from `verify` or `start`, open `:20128/dashboard/token-saver` and toggle off Ponytail + Caveman.
 
+## Recommended: Snip
+
+Install [snip](https://github.com/nickbreaton/snip) for passive shell output compression (60-90% token reduction):
+
+```bash
+npm i -g snip
+```
+
+`farewell_helper verify` will confirm it's installed. Works transparently with OpenCode.
+
 ## Principles
 
 1. Single source of truth per concept

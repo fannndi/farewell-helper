@@ -124,6 +124,14 @@ def verify() -> dict:
         for issue in combo["issues"]:
             results.append({"category": "9router", "status": "warn", "label": f"Combo issue: {issue}"})
 
+    from .mcp import _check_snip_installed
+    snip_ok = _check_snip_installed()
+    results.append({
+        "category": "config",
+        "status": "pass" if snip_ok else "warn",
+        "label": f"Snip: {'installed (token saving)' if snip_ok else 'not installed — install: npm i -g snip'}" if snip_ok else "Snip: not installed — install for 60-90% shell output compression",
+    })
+
     total_pass = sum(1 for r in results if r["status"] == "pass")
     total_warn = sum(1 for r in results if r["status"] == "warn")
     total_fail = sum(1 for r in results if r["status"] == "fail")

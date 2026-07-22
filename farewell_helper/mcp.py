@@ -1,35 +1,20 @@
 import io
 import json
+import subprocess
 import sys
 from collections.abc import Callable
 from . import config
 
 TOOLS = [
-    {
-        "name": "farewell_helper_verify",
-        "description": "Verify persona + skill injection system",
-        "inputSchema": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "farewell_helper_sync",
-        "description": "Sync 9Router combos + resolve opencode config template",
-        "inputSchema": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "farewell_helper_start",
-        "description": "Session start: validate persona, show active project, ready check",
-        "inputSchema": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "farewell_helper_daily",
-        "description": "Health check + sync combo + resolve config template",
-        "inputSchema": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "farewell_helper_skills",
-        "description": "Return standby skill names for the active project as structured JSON — use this to know which skills to load via the skill tool.",
-        "inputSchema": {"type": "object", "properties": {}},
-    },
+    {"name": "farewell_helper_verify", "description": "Verify persona + skill injection system", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_sync", "description": "Sync 9Router combos + resolve opencode config template", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_start", "description": "Session start: validate persona, show active project, ready check", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_daily", "description": "Health check + sync combo + resolve config template", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_skills", "description": "Return standby skill names for the active project as structured JSON", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_prompt_check", "description": "Report what gets injected into the LLM system prompt — persona + skills + memory token counts", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_memory", "description": "Return MEMORY.md and USER.md content for the active project", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_glossary", "description": "Return AUTO-GLOSSARY.md content for the active project", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_handoffs", "description": "Return list of session handoffs for the active project", "inputSchema": {"type": "object", "properties": {}}},
 ]
 
 
@@ -52,6 +37,69 @@ def _run_skills_json() -> str:
         "count": len(skill_names),
         "skills": skill_names,
     })
+
+
+def _run_memory_json() -> str:
+    from .commands.project import get_active
+    from .core.memory import memory_content, user_content
+    active = get_active()
+    code = active.get("code", "001")
+    name = active.get("name", "farewell-helper")
+    return json.dumps({
+        "project": f"{code}-{name}",
+        "memory": memory_content(code, name),
+        "user": user_content(code, name),
+    })
+
+
+def _run_glossary_json() -> str:
+    from .commands.project import get_active
+    from .context_manager import context_content
+    active = get_active()
+    code = active.get("code", "001")
+    name = active.get("name", "farewell-helper")
+    return json.dumps({
+        "project": f"{code}-{name}",
+        "glossary": context_content(code, name),
+    })
+
+
+def _run_handoffs_json() -> str:
+    from .commands.project import get_active
+    from .core.session import recent_sessions
+    active = get_active()
+    code = active.get("code", "001")
+    name = active.get("name", "farewell-helper")
+    sessions = recent_sessions(code, name, 10)
+    return json.dumps({
+        "project": f"{code}-{name}",
+        "count": len(sessions),
+        "sessions": [{k: v for k, v in s.items() if k in ("id", "task", "status", "started_at")} for s in sessions],
+    })
+
+
+def _run_prompt_check_json() -> str:
+    persona_chars = sum(len(f.read_text(encoding="utf-8")) for f in config.persona_files() if f.exists())
+    skill_dir = config.ROOT_DIR / "skills"
+    skills = {}
+    if skill_dir.exists():
+        for sf in sorted(skill_dir.rglob("SKILL.md")):
+            skills[sf.parent.name] = len(sf.read_text(encoding="utf-8")) // 4
+    return json.dumps({
+        "persona_tokens": persona_chars // 4,
+        "persona_files": [f.name for f in config.persona_files()],
+        "skills": skills,
+        "skill_count": len(skills),
+        "total_tokens": persona_chars // 4 + sum(skills.values()),
+    })
+
+
+def _check_snip_installed() -> bool:
+    try:
+        r = subprocess.run(["snip", "--version"], capture_output=True, timeout=5)
+        return r.returncode == 0
+    except Exception:
+        return False
 
 
 def _capture(fn: Callable[[], None]) -> str:
@@ -84,6 +132,14 @@ def _run_tool(name: str) -> str:
         return _capture(_cmd_daily)
     if name == "farewell_helper_skills":
         return _run_skills_json()
+    if name == "farewell_helper_prompt_check":
+        return _run_prompt_check_json()
+    if name == "farewell_helper_memory":
+        return _run_memory_json()
+    if name == "farewell_helper_glossary":
+        return _run_glossary_json()
+    if name == "farewell_helper_handoffs":
+        return _run_handoffs_json()
     return json.dumps({"error": f"Unknown tool: {name}"})
 
 
