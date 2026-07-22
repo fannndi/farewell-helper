@@ -7,7 +7,7 @@ from . import config
 DEFAULT_MODEL_CONFIG = {
     "reasoning": True,
     "tool_call": True,
-    "limit": {"context": 200000, "output": 8192},
+    "limit": {"context": 1000000, "output": 8192},
 }
 
 
@@ -35,10 +35,16 @@ def render() -> dict | None:
 
     combo_names = list(api_data.keys()) if api_data else list(models.keys())
 
-    # Add/update each combo as a model entry
+    # Update each combo with correct limits
     for name in combo_names:
         if name not in models:
             models[name] = {"name": name, **DEFAULT_MODEL_CONFIG}
+        else:
+            models[name].setdefault("name", name)
+            models[name].setdefault("reasoning", True)
+            models[name].setdefault("tool_call", True)
+            limits = models[name].setdefault("limit", {})
+            limits["context"] = DEFAULT_MODEL_CONFIG["limit"]["context"]
 
     # Update top-level model if not set to a known combo
     top_model = config_data.get("model", "")
