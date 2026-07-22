@@ -17,11 +17,11 @@ farewell-helper init
 | Command | Description |
 |---------|-------------|
 | `init` | Verify persona + sync + health check |
-| `daily` | Full health check + sync combo + resolve config |
+| `daily` | Full health check + fetch combos from 9Router + resolve config |
 | `sync` | Sync 9Router combos → resolve opencode config |
-| `start` | Validate persona + active project + 9Router |
-| `verify` | Verify persona + skill injection system |
-| `status` | Show current state |
+| `start` | Validate persona + active project + 9Router + sub-project check |
+| `verify` | Verify persona + skill injection system + local overrides |
+| `status` | Show current state + sub-project detection |
 | `health` | Full project health report |
 | `project` | List/switch/unregister projects |
 | `memory` | View/edit MEMORY.md and USER.md |
@@ -29,7 +29,7 @@ farewell-helper init
 | `notes` | Manage auto-glossary terms |
 | `todo` | Manage TODO.md |
 | `done` | Auto-compress: commit + push + handoff |
-| `setup-project <path>` | Register external project |
+| `setup-project <path>` | Register external project with isolated state |
 | `pre-commit` | Quality gate: tests + TODO check |
 
 ## Architecture
@@ -43,13 +43,14 @@ farewell-helper/
 │   ├── farewell-engineering/
 │   ├── farewell-flows/
 │   └── farewell-9router/
-├── farewell.combos.jsonc # Combo config source of truth
-├── opencode.template.jsonc # Template with ${PLACEHOLDER}s
+├── opencode.jsonc        # OpenCode config (static, committed)
+├── sub-project-assistant.md  # Multi-repo guide
 ├── farewell_helper/      # Python package
-│   ├── router_client.py  # Simple 9Router HTTP client
-│   ├── sync.py           # Combo sync + template resolver
+│   ├── router_client.py  # 9Router HTTP client + dashboard API
+│   ├── sync.py           # Combo sync (API → fallback → convention)
 │   ├── mcp.py            # Minimal MCP server
-│   ├── verify.py         # Persona/config/9Router verification
+│   ├── verify.py         # Persona/config/9Router/local skills verification
+│   ├── setup_project.py  # External repo registration + .farewell injection
 │   └── commands/         # CLI commands
 └── .farewell/            # Runtime data (gitignored)
 ```

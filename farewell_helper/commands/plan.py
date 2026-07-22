@@ -10,7 +10,7 @@ def todo(args) -> None:
 
     active = get_active()
     proj_code, proj_name = active.get("code", "001"), active.get("name", "farewell-helper")
-    proj_ctx = config.CONTEXT_DIR / f"{proj_code}-{proj_name}"
+    proj_ctx = config.project_farewell_dir(proj_code) / "context"
     proj_ctx.mkdir(parents=True, exist_ok=True)
     todo_file = proj_ctx / "TODO.md"
 
@@ -88,8 +88,9 @@ def todo(args) -> None:
 
 def _log_completion(proj_code: str, proj_name: str, task: str) -> None:
     from .. import config
-    memory_file = config.MEMORY_DIR / f"{proj_code}-{proj_name}" / "MEMORY.md"
-    memory_file.parent.mkdir(parents=True, exist_ok=True)
+    memory_dir = config.project_farewell_dir(proj_code) / "memory"
+    memory_dir.mkdir(parents=True, exist_ok=True)
+    memory_file = memory_dir / "MEMORY.md"
     entry = f"\n- Completed: {task}\n"
     existing = memory_file.read_text(encoding="utf-8") if memory_file.exists() else ""
     memory_file.write_text(existing + entry, encoding="utf-8")
@@ -153,9 +154,14 @@ def done(args) -> None:
         save_memory(code, name, mem + entry)
     ok(f"Handoff saved: {handoff_path.name}")
 
-    proj_ctx = fconfig.CONTEXT_DIR / f"{code}-{name}"
+    proj_ctx = fconfig.project_farewell_dir(code) / "context"
     proj_ctx.mkdir(parents=True, exist_ok=True)
     todo_file = proj_ctx / "TODO.md"
+    # Migrate old todo if exists
+    old_todo = fconfig.FAREWELL_DIR / "context" / f"{code}-{name}" / "TODO.md"
+    if old_todo.exists() and not todo_file.exists():
+        todo_file.write_text(old_todo.read_text(encoding="utf-8"), encoding="utf-8")
+        old_todo.unlink()
     if todo_file.exists():
         archive = proj_ctx / f"todo-archive-{datetime.now().strftime('%Y%m%d-%H%M')}.md"
         todo_file.replace(archive)

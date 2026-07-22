@@ -107,7 +107,7 @@ def auto_extract(learnings: list[str], memory_path: Path) -> dict:
 
 def compile_learnings(code: str, name: str) -> dict:
     """Scan all handoff files and compile cross-session learnings."""
-    handoff_dir = config.MEMORY_DIR / f"{code}-{name}"
+    handoff_dir = config.project_farewell_dir(code) / "memory"
     if not handoff_dir.exists():
         return {"total": 0, "patterns": [], "suggestions": []}
 

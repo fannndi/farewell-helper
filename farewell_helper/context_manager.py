@@ -8,21 +8,33 @@ from pathlib import Path
 from . import config
 
 
-def _context_dir(code: str, name: str) -> Path:
-    d = config.FAREWELL_DIR / "context" / f"{code}-{name}"
+def _project_context_dir(code: str) -> Path:
+    """Return project's .farewell/context dir, with migration from old central location."""
+    d = config.project_farewell_dir(code) / "context"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
+def _migrate_context(code: str, name: str, ctx_dir: Path):
+    """Migrate AUTO-GLOSSARY.md from old central namespace to per-project dir."""
+    old = config.FAREWELL_DIR / "context" / f"{code}-{name}" / "AUTO-GLOSSARY.md"
+    new = ctx_dir / "AUTO-GLOSSARY.md"
+    if old.exists() and not new.exists():
+        new.write_text(old.read_text(encoding="utf-8"), encoding="utf-8")
+        old.unlink()
+
+
 def context_content(code: str, name: str) -> str:
-    p = _context_dir(code, name) / "AUTO-GLOSSARY.md"
+    d = _project_context_dir(code)
+    _migrate_context(code, name, d)
+    p = d / "AUTO-GLOSSARY.md"
     return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
 def save_context(code: str, name: str, content: str):
-    p = _context_dir(code, name) / "AUTO-GLOSSARY.md"
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(content, encoding="utf-8")
+    d = _project_context_dir(code)
+    _migrate_context(code, name, d)
+    (d / "AUTO-GLOSSARY.md").write_text(content, encoding="utf-8")
 
 
 def add_glossary_term(code: str, name: str, term: str, definition: str) -> bool:
@@ -47,8 +59,9 @@ def init_context_from_archetype(code: str, name: str, archetype: dict):
     stack = archetype.get("stack", "unknown")
     skills = archetype.get("skills", [])
 
-    context_dir = _context_dir(code, name)
-    context_file = context_dir / "AUTO-GLOSSARY.md"
+    ctx_dir = _project_context_dir(code)
+    context_file = ctx_dir / "AUTO-GLOSSARY.md"
+    _migrate_context(code, name, ctx_dir)
 
     if context_file.exists():
         existing = context_file.read_text(encoding="utf-8")
@@ -70,7 +83,7 @@ def init_context_from_archetype(code: str, name: str, archetype: dict):
 
 
 def list_adrs(code: str, name: str) -> list[Path]:
-    adr_dir = _context_dir(code, name) / "adr"
+    adr_dir = _project_context_dir(code) / "adr"
     if not adr_dir.exists():
         return []
     return sorted(adr_dir.glob("ADR-*.md"))

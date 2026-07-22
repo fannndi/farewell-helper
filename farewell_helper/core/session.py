@@ -6,9 +6,37 @@ from .. import config
 LINEAGE_FILE = "lineage.json"
 
 
-def _lineage_path(code: str, name: str) -> Path:
-    d = config.MEMORY_DIR / f"{code}-{name}"
+def _project_memory_dir(code: str) -> Path:
+    """Return project's .farewell/memory dir, with migration."""
+    d = config.project_farewell_dir(code) / "memory"
     d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _migrate_file(code: str, name: str, filename: str, memory_dir: Path):
+    """Move file from old central namespace to new per-project dir."""
+    old = config.FAREWELL_DIR / "memory" / f"{code}-{name}" / filename
+    new = memory_dir / filename
+    if old.exists() and not new.exists():
+        new.write_text(old.read_text(encoding="utf-8"), encoding="utf-8")
+        old.unlink()
+
+
+def _migrate_handoffs(code: str, name: str, memory_dir: Path):
+    """Migrate all handoff files from old central location."""
+    old_dir = config.FAREWELL_DIR / "memory" / f"{code}-{name}"
+    if not old_dir.exists():
+        return
+    for f in old_dir.glob("handoff-*.md"):
+        new = memory_dir / f.name
+        if not new.exists():
+            new.write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
+        f.unlink()
+
+
+def _lineage_path(code: str, name: str) -> Path:
+    d = _project_memory_dir(code)
+    _migrate_file(code, name, LINEAGE_FILE, d)
     return d / LINEAGE_FILE
 
 
@@ -62,8 +90,8 @@ def last_session(code: str, name: str) -> dict | None:
 
 def generate_handoff(code: str, name: str, task: str, status: str,
                      summary: str, files: list[str] | None = None) -> Path:
-    d = config.MEMORY_DIR / f"{code}-{name}"
-    d.mkdir(parents=True, exist_ok=True)
+    d = _project_memory_dir(code)
+    _migrate_handoffs(code, name, d)
     date_str = datetime.now().strftime("%Y%m%d-%H%M")
     file_list = "\n".join(f"- {f}" for f in (files or [])) or "- (no files)"
     content = f"""# Handoff — {date_str}
@@ -86,8 +114,7 @@ def generate_handoff(code: str, name: str, task: str, status: str,
 
 
 def last_handoff(code: str, name: str) -> str:
-    d = config.MEMORY_DIR / f"{code}-{name}"
-    if not d.exists():
-        return ""
+    d = _project_memory_dir(code)
+    _migrate_handoffs(code, name, d)
     files = sorted(d.glob("handoff-*.md"), reverse=True)
     return files[0].read_text(encoding="utf-8") if files else ""

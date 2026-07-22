@@ -131,18 +131,18 @@ def generate_archetype_report(archetype: dict) -> str:
 """
 
 
-def save_archetype(archetype: dict) -> None:
-    """Save archetype to archetype.json for persistence across sessions."""
+def save_archetype(archetype: dict, code: str = "001") -> None:
+    """Save archetype to project's .farewell/context/archetype.json."""
     import json
-    ctx_file = config.FAREWELL_DIR / "context" / "archetype.json"
-    ctx_file.parent.mkdir(parents=True, exist_ok=True)
-    ctx_file.write_text(json.dumps(archetype, indent=2), encoding="utf-8")
+    ctx_dir = config.project_farewell_dir(code) / "context"
+    ctx_dir.mkdir(parents=True, exist_ok=True)
+    (ctx_dir / "archetype.json").write_text(json.dumps(archetype, indent=2), encoding="utf-8")
 
 
-def load_archetype() -> dict:
-    """Load archetype from archetype.json for cross-session continuity."""
+def load_archetype(code: str = "001") -> dict:
+    """Load archetype from project's .farewell/context/archetype.json."""
     import json
-    ctx_file = config.FAREWELL_DIR / "context" / "archetype.json"
+    ctx_file = config.project_farewell_dir(code) / "context" / "archetype.json"
     if not ctx_file.exists():
         return {"stack": DEFAULT_STACK, "skills": DEFAULT_SKILLS, "detected": False}
     try:

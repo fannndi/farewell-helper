@@ -17,16 +17,24 @@ def _load_projects() -> list[dict]:
         return projects
     for line in reg_file.read_text(encoding="utf-8").splitlines():
         line = line.strip()
-        if "|" not in line:
-            continue
-        code, name = line.split("|", 1)
-        projects.append({"code": code, "name": name})
+        parts = line.split("|", 2)
+        if len(parts) >= 2:
+            proj = {"code": parts[0], "name": parts[1]}
+            if len(parts) >= 3 and parts[2]:
+                proj["path"] = parts[2]
+            projects.append(proj)
     return projects
 
 
 def _save_projects(projects: list[dict]) -> None:
     reg_file = config.FAREWELL_DIR / "projects.txt"
-    lines = [f"{p['code']}|{p['name']}" for p in projects]
+    lines = []
+    for p in projects:
+        entry = f"{p['code']}|{p['name']}"
+        raw_path = p.get("path", "")
+        if raw_path:
+            entry += f"|{raw_path}"
+        lines.append(entry)
     reg_file.write_text("\n".join(lines) + "\n")
 
 
@@ -37,6 +45,7 @@ def get_active() -> dict:
             active = json.loads(ACTIVE_FILE.read_text(encoding="utf-8"))
             for p in projects:
                 if p["code"] == active.get("code"):
+                    active["path"] = p.get("path", "")
                     return active
         except Exception as e:
             info(f"active project fetch failed: {e}")
@@ -49,28 +58,28 @@ def set_active(code: str, name: str) -> None:
 
 
 def _project_status_detail(active: dict) -> None:
+    code = active.get("code", "001")
     print(f"\n  {c('Active Project', 'cyan')}")
-    print(f"  {active['code']}: {active['name']}")
+    print(f"  {code}: {active.get('name', '?')}")
 
-    arc = config.FAREWELL_DIR / "context" / "archetype.json"
-    if arc.exists():
+    farew_dir = config.project_farewell_dir(code)
+    arc_file = farew_dir / "context" / "archetype.json"
+    if arc_file.exists():
         try:
-            a = json.loads(arc.read_text(encoding="utf-8"))
+            a = json.loads(arc_file.read_text(encoding="utf-8"))
             if a.get("detected"):
                 print(f"  Stack: {a['stack']}")
         except Exception as e:
             info(f"archetype load failed: {e}")
 
-    # Memory size
-    mem_dir = config.FAREWELL_DIR / "memory" / f"{active['code']}-{active['name']}"
+    mem_dir = farew_dir / "memory"
     if mem_dir.exists():
         total = sum(f.stat().st_size for f in mem_dir.rglob("*") if f.is_file())
         print(f"  Memory: {total:,} bytes ({len(list(mem_dir.rglob('*')))} files)")
     else:
         print(f"  Memory: 0 bytes")
 
-    # Skill overrides
-    ctx_dir = config.FAREWELL_DIR / "context" / f"{active['code']}-{active['name']}"
+    ctx_dir = farew_dir / "context"
     if ctx_dir.exists():
         terms = 0
         ag = ctx_dir / "AUTO-GLOSSARY.md"
@@ -78,6 +87,9 @@ def _project_status_detail(active: dict) -> None:
             terms = ag.read_text(encoding="utf-8").count("- **")
         print(f"  Auto-glossary: {terms} term(s)")
 
+    proj_path = config.project_path(code)
+    if proj_path:
+        print(f"  Path: {proj_path}")
     print()
 
 
@@ -91,27 +103,27 @@ def cmd_project(args: argparse.Namespace) -> None:
         print(f"\n  {c('Registered Projects', 'cyan')}")
         for p in projects:
             tag = c("ACTIVE", "green") if p["code"] == active["code"] else ""
-            print(f"  {p['code']}: {p['name']} {tag}")
+            path_tag = f" {p.get('path', '')}" if p.get("path") else " (no path)"
+            print(f"  {p['code']}: {p['name']}{path_tag} {tag}")
         print()
     elif args.action == "switch":
         target = [p for p in projects if p["code"] == args.code]
         if not target:
             fail(f"Project not found: {args.code}")
             return
-        set_active(target[0]["code"], target[0]["name"])
-        ok(f"Switched to {target[0]['code']}-{target[0]['name']}")
+        t = target[0]
+        set_active(t["code"], t["name"])
+        ok(f"Switched to {t['code']}-{t['name']}")
 
-        # Auto-sync archetype on switch
-        proj_path = config.ROOT_DIR
-        dot_dir = proj_path / ".farewell"
-        arc_file = dot_dir / "context" / "archetype.json"
-        if arc_file.exists():
-            from ..archetype import detect, save_archetype
-            arc = detect(proj_path)
-            save_archetype(arc)
-            from ..setup_project import update_metadata
-            update_metadata(target[0]["code"], target[0]["name"], "last_sync", __import__("datetime").datetime.now().isoformat())
-            info("Auto-sync archetype completed")
+        proj_path = config.project_path(t["code"])
+        if proj_path is None:
+            proj_path = config.ROOT_DIR
+        from ..archetype import detect, save_archetype
+        arc = detect(proj_path)
+        save_archetype(arc, code=t["code"])
+        from ..setup_project import update_metadata
+        update_metadata(t["code"], t["name"], "last_sync", __import__("datetime").datetime.now().isoformat())
+        info("Auto-sync archetype completed")
     elif args.action == "unregister":
         target = [p for p in projects if p["code"] == args.code]
         if not target:
@@ -122,16 +134,15 @@ def cmd_project(args: argparse.Namespace) -> None:
             fail("Cannot unregister farewell-helper root project")
             return
 
-        # Cleanup .farewell/ in target repo (best effort — may not be cwd)
-        for candidate in [Path(".").resolve(), Path(p["name"]).resolve()]:
-            dot_dir = candidate / ".farewell"
+        proj_path = config.project_path(p["code"])
+        if proj_path:
+            dot_dir = proj_path / ".farewell"
             if dot_dir.exists():
                 shutil.rmtree(str(dot_dir))
 
         projects = [pr for pr in projects if pr["code"] != p["code"]]
         _save_projects(projects)
 
-        # Remove metadata
         meta_file = config.FAREWELL_DIR / "metadata.json"
         if meta_file.exists():
             data = json.loads(meta_file.read_text(encoding="utf-8"))
@@ -141,13 +152,13 @@ def cmd_project(args: argparse.Namespace) -> None:
             else:
                 meta_file.unlink()
 
-        # Remove memory/context dirs
-        for subdir in ["memory", "context"]:
-            target_dir = config.FAREWELL_DIR / subdir / f"{p['code']}-{p['name']}"
-            if target_dir.exists():
-                shutil.rmtree(str(target_dir))
+        old_memory = config.FAREWELL_DIR / "memory" / f"{p['code']}-{p['name']}"
+        if old_memory.exists():
+            shutil.rmtree(str(old_memory))
+        old_context = config.FAREWELL_DIR / "context" / f"{p['code']}-{p['name']}"
+        if old_context.exists():
+            shutil.rmtree(str(old_context))
 
-        # If currently active, reset to default
         active = get_active()
         if active["code"] == p["code"]:
             set_active("001", "farewell-helper")

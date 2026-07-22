@@ -1,5 +1,28 @@
 """CLI entry point — argparse router delegating to modular command files."""
 import argparse
+from pathlib import Path
+
+
+def _check_sub_project() -> None:
+    """Detect if cwd is in an unregistered project outside workspace."""
+    cwd = Path.cwd().resolve()
+    from .. import config as cfg
+    from ..setup_project import detect_sub_project
+    from ..commands.project import _load_projects
+    from ..helpers import info, warn
+
+    registered_paths = {cfg.project_path(p["code"]) for p in _load_projects() if cfg.project_path(p["code"])}
+    if cwd in registered_paths or cwd.parent in registered_paths or cwd == cfg.ROOT_DIR:
+        return
+
+    result = detect_sub_project(cwd)
+    if result and not result["has_farewell"]:
+        warn(f"cwd is outside farewell-helper: {cwd}")
+        info(f"Detected git repo: {result['name']}")
+        info("Unregistered. Run 'setup-project <path>' to register")
+    elif result and result["has_farewell"]:
+        warn(f"Detected repo with .farewell: {result['name']}")
+        info("It may already be registered. Run 'project list' to check")
 
 
 def main() -> None:
@@ -113,17 +136,19 @@ def main() -> None:
 
 def _cmd_sync() -> None:
     from ..sync import render
-    from ..helpers import ok, fail
+    from ..helpers import ok, fail, info
     meta = render()
     if meta:
-        ok(f"Combos synced ({len(meta.get('combos', []))} combo(s))")
+        src = meta.get("source", "?")
+        ok(f"Combos synced ({len(meta.get('combos', []))} combo(s), source: {src})")
     else:
         fail("template not found")
 
 
 def _cmd_daily() -> None:
     from ..helpers import ok, fail, info
-    info("1/3: Verify persona")
+
+    info("Step 1/5: Verify persona")
     from ..verify import verify
     v = verify()
     if v["summary"]["fail"] > 0:
@@ -131,16 +156,36 @@ def _cmd_daily() -> None:
         return
     ok("Persona verified")
 
-    info("2/3: Sync combos")
+    _check_sub_project()
+
+    info("Step 2/5: Fetch combos from 9Router")
+    from ..router_client import fetch_combos
+    combos = fetch_combos()
+    if combos:
+        ok(f"Combos from API ({len(combos)} combo(s))")
+        for name, models in combos.items():
+            info(f"  {name}: {', '.join(models[:2])}{'...' if len(models) > 2 else ''}")
+    else:
+        info("API combos unavailable (auth_token missing or 9Router down)")
+        info("Falling back to local config or placeholder convention")
+
+    info("Step 3/5: Resolve config template")
     from ..sync import render
     meta = render()
     if meta:
-        ok(f"Combos synced ({len(meta.get('combos', []))} combo(s))")
+        src = meta.get("source", "?")
+        ok(f"Config synced ({len(meta.get('combos', []))} combo(s), source: {src})")
+        if meta.get("unresolved"):
+            for ph in meta["unresolved"]:
+                info(f"  Unresolved placeholder: {ph}")
     else:
         fail("Sync failed — template not found")
         return
 
-    info("3/3: Health check")
+    info("Step 4/5: Token-saver check")
+    _check_token_saver()
+
+    info("Step 5/5: Health check")
     from ..router_client import ping
     alive = ping()
     if alive["alive"]:
@@ -148,6 +193,27 @@ def _cmd_daily() -> None:
     else:
         info("9Router not running — start with: 9router")
     ok("Daily check complete")
+
+
+def _check_token_saver() -> None:
+    """Best-effort token-saver check. Dashboard page exists but data is client-rendered."""
+    import urllib.request
+    from .. import config
+    from ..router_client import _dashboard_headers
+    url = f"{config.router_base_url()}/dashboard/token-saver"
+    try:
+        req = urllib.request.Request(url, headers=_dashboard_headers())
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            html = resp.read().decode()
+            import re
+            title = re.search(r"<title>(.*?)</title>", html)
+            title_text = title.group(1) if title else "9Router Dashboard"
+            from ..helpers import info
+            info(f"Token-saver page loaded ({title_text})")
+            info("Token-saver config: only accessible via browser session (SPA)")
+    except Exception as e:
+        from ..helpers import info
+        info(f"Token-saver page unavailable: {e}")
 
 
 def _cmd_status() -> None:
@@ -173,6 +239,9 @@ def _cmd_start() -> None:
         return
     ok(f"All persona files present ({len(persona_paths)} files)")
     ok(f"Active project: {active['code']}-{active['name']}")
+
+    _check_sub_project()
+
     from ..router_client import ping
     alive = ping()
     if alive["alive"]:
@@ -193,7 +262,12 @@ def _cmd_init() -> None:
     info("2/3: Sync combos")
     from ..sync import render
     meta = render()
-    ok(f"Config synced ({len(meta.get('combos', []))} combo(s))")
+    if meta:
+        ok(f"Config synced ({len(meta.get('combos', []))} combo(s))")
+    else:
+        from ..helpers import fail
+        fail("Config sync failed — template not found")
+        return
 
     info("3/3: Health check")
     from ..router_client import ping

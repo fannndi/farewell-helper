@@ -3,7 +3,7 @@ __pycache__/
 .pytest_cache/
 .env
 .farewell/
-opencode.jsonc
+# opencode.jsonc is committed (static config after template removal)
 *.egg-info/
 dist/
 build/

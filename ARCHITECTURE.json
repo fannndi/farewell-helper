@@ -40,7 +40,8 @@
         "Execution_Paid": { "strategy": "fallback", "use": "Implementation & bug fixing" },
         "Execution_Free": { "strategy": "round-robin", "use": "Light execution" }
       },
-      "combosFile": "farewell.combos.jsonc"
+      "combosApi": "/api/combos",
+      "combosFile": "farewell.combos.jsonc (optional fallback)"
     },
     "skills": {
       "path": "skills/",
@@ -110,13 +111,13 @@
 
   "dataFlows": {
     "sessionStart": ["OpenCode loads PERSONA.md + PROTOCOL.md as instructions", "/start verifies persona files exist", "/start pings 9Router health", "AI reads persona -> knows identity"],
-    "dailyCheck": ["verify persona", "sync reads farewell.combos.jsonc", "resolves ${PLACEHOLDER}s in opencode.template.jsonc", "writes opencode.jsonc", "ping 9Router"],
+    "dailyCheck": ["verify persona", "sync fetches combos via 9Router API (fallback file/placeholder)", "resolves ${PLACEHOLDER}s in opencode.template.jsonc", "writes opencode.jsonc", "ping 9Router"],
     "handoffCycle": ["done: pre-commit -> git add -> git commit -> git push", "generate_handoff() writes handoff-*.md", "updates MEMORY.md", "archives TODO.md", "next session: last_handoff() resumes"],
     "multiRepo": ["setup-project <path> -> detect archetype -> inject .farewell/", "project switch <code> -> switch active context", "isolated memory/context per project"]
   },
 
   "agentOnboarding": {
-    "readFirst": ["PERSONA.md", "PROTOCOL.md", "farewell.combos.jsonc", "ARCHITECTURE.json"],
+    "readFirst": ["PERSONA.md", "PROTOCOL.md", "ARCHITECTURE.json"],
     "entryPoint": "pyproject.toml -> farewell_helper.commands:main",
     "keyModules": ["router_client.py (9Router)", "sync.py (template resolver)", "mcp.py (MCP server)"],
     "testStrategy": "No tests yet. pytest in root, test files in tests/.",
@@ -124,7 +125,7 @@
       "Add CLI command: commands/__init__.py parser + impl in commands/",
       "Add MCP tool: mcp.py TOOLS list + _CMD_MAP",
       "Add 9Router API: router_client.py new function",
-      "Add combo tier: farewell.combos.jsonc + template placeholder",
+      "Add combo tier: combo config in template + API combo data",
       "Add skill: skills/{name}/SKILL.md with frontmatter"
     ],
     "caveats": [

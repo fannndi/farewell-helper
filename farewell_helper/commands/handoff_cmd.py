@@ -20,7 +20,7 @@ def handoff(args) -> None:
         if mem:
             print(f"  MEMORY.md: {len(mem)} chars")
     elif args.action == "list":
-        d = config.MEMORY_DIR / f"{code}-{name}"
+        d = config.project_farewell_dir(code) / "memory"
         files = sorted(d.glob("handoff-*.md"), reverse=True) if d.exists() else []
         if not files:
             print("  No handoffs found.")
@@ -34,7 +34,7 @@ def handoff(args) -> None:
         if not query:
             fail("Provide search query: handoff search <query>")
             return
-        d = config.MEMORY_DIR / f"{code}-{name}"
+        d = config.project_farewell_dir(code) / "memory"
         if not d.exists():
             print("  No handoffs found.")
             return
@@ -50,7 +50,7 @@ def handoff(args) -> None:
             print(f"    {f.name}")
         print()
     elif args.action == "export":
-        d = config.MEMORY_DIR / f"{code}-{name}"
+        d = config.project_farewell_dir(code) / "memory"
         files = sorted(d.glob("handoff-*.md"), reverse=True) if d.exists() else []
         if not files:
             print("  No handoffs to export.")

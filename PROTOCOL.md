@@ -78,7 +78,7 @@ Kalau execute di mode PLAN (accidental):
 - `.env` provides `NINEROUTER_API_KEY` untuk 9Router auth
 - Semua API call via 9Router endpoint `:20128`
 - Single model per call, no multi-model parallel
-- Combo config source of truth: `farewell.combos.jsonc`
+- Combo config: fetched from 9Router `/api/combos` (fallback: file/placeholder convention)
 - Template `opencode.template.jsonc` di-resolve oleh `sync` command
 
 ## Security Rules

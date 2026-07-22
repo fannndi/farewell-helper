@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "${FREE_Model}",
+  "model": "9router/FREE_Model",
   "default_agent": "build",
 
   "provider": {
@@ -47,7 +47,7 @@
     "build": {
       "description": "Farewell Helper - full access, eksekusi",
       "mode": "primary",
-      "model": "${Execution_Paid}",
+      "model": "9router/Execution_Paid",
       "permission": {
         "edit": "allow",
         "bash": "allow",
@@ -60,7 +60,7 @@
     "plan": {
       "description": "Farewell Helper - read-only, analisis & rencana",
       "mode": "primary",
-      "model": "${Pro_Plan}",
+      "model": "9router/Pro_Plan",
       "permission": {
         "edit": "deny",
         "bash": {

@@ -59,6 +59,25 @@ def verify() -> dict:
         "label": f"Skills: {skill_mentioned}/{len(skill_names)} referenced in persona docs",
     })
 
+    code = "001"
+    try:
+        from .commands.project import get_active
+        active = get_active()
+        code = active.get("code", "001")
+    except Exception:
+        pass
+    proj_path = config.project_path(code)
+    if proj_path:
+        from .setup_project import get_effective_skills
+        local_skills = get_effective_skills(proj_path)
+        extra = [s for s in local_skills if s not in skill_names]
+        if extra:
+            results.append({
+                "category": "skill",
+                "status": "pass",
+                "label": f"Local skill overrides ({len(extra)}): {', '.join(extra)}",
+            })
+
     from .router_client import ping
     router = ping()
     router_alive = router.get("alive", False)

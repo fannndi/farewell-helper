@@ -35,18 +35,18 @@ def analyze(path_str: str) -> dict:
         raise ValueError(f"Path not found: {target}")
 
     name = target.name
-    code = _next_code(name)
+    code = _next_code(name, target)
     _inject_farewell(target)
 
     from .archetype import detect, save_archetype, generate_archetype_report
     from .context_manager import init_context_from_archetype
     arc = detect(target)
-    save_archetype(arc)
+    save_archetype(arc, code=code)
     if arc["detected"]:
         report = generate_archetype_report(arc)
-        ctx_file = target / ".farewell" / "context" / "archetype.md"
-        ctx_file.parent.mkdir(parents=True, exist_ok=True)
-        ctx_file.write_text(report, encoding="utf-8")
+        ctx_dir = config.project_farewell_dir(code) / "context"
+        ctx_dir.mkdir(parents=True, exist_ok=True)
+        (ctx_dir / "archetype.md").write_text(report, encoding="utf-8")
         init_context_from_archetype(code, name, arc)
 
     from datetime import datetime
@@ -66,7 +66,7 @@ def analyze(path_str: str) -> dict:
     }
 
 
-def _next_code(name: str) -> str:
+def _next_code(name: str, target_path: Path) -> str:
     reg_file = config.FAREWELL_DIR / "projects.txt"
     existing: list[str] = []
     if reg_file.exists():
@@ -75,7 +75,7 @@ def _next_code(name: str) -> str:
         reg_file.parent.mkdir(parents=True, exist_ok=True)
         existing.append("001|farewell-helper")
     code = str(len(existing) + 1).zfill(3)
-    existing.append(f"{code}|{name}")
+    existing.append(f"{code}|{name}|{target_path}")
     reg_file.write_text("\n".join(existing) + "\n")
     return code
 
@@ -163,14 +163,3 @@ def get_effective_skills(project_path: Path) -> list[str]:
             local_skills.append(skill_name)
 
     return list(dict.fromkeys(local_skills + base_skills))
-
-
-def _symlink(src: Path, dst: Path):
-    try:
-        dst.symlink_to(src, target_is_directory=src.is_dir())
-    except (OSError, NotImplementedError):
-        if src.is_dir():
-            import shutil
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-        else:
-            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")

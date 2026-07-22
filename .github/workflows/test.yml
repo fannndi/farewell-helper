@@ -34,18 +34,15 @@ jobs:
           for f in skills/*/SKILL.md; do
             grep -q "description: Use when" "$f" || { echo "$f missing 'Use when' frontmatter"; exit 1; }
           done
-      - name: Check combo config
-        run: |
+      - name: Check combos via sync
+        run: >
           python -c "
-import json
-# validate farewell.combos.jsonc is valid JSON (strip // lines first)
-text = open('farewell.combos.jsonc').read()
-lines = [l for l in text.split(chr(10)) if not l.strip().startswith('//')]
-data = json.loads(chr(10).join(lines))
-assert 'FREE_Model' in data
-assert 'Execution_Paid' in data
-print('Combos OK:', list(data.keys()))
-"
+          from farewell_helper.sync import render;
+          meta = render();
+          assert meta is not None, 'render() failed';
+          print('Combos:', meta.get('combos', []));
+          print('Source:', meta.get('source', '?'));
+          "
       - name: Check version consistency
         run: |
           py_version=$(python -c "from farewell_helper import __version__; print(__version__)")

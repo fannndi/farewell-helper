@@ -96,24 +96,24 @@ class TestSkillFiles:
 
 
 class TestConfig:
-    def test_combos_file_valid(self):
-        combos_file = ROOT / "farewell.combos.jsonc"
-        assert combos_file.exists()
-        content = combos_file.read_text(encoding="utf-8")
-        assert "FREE_Model" in content
-        assert "Execution_Paid" in content
+    def test_opencode_config_exists(self):
+        """Verify opencode.jsonc is committed and valid."""
+        assert (ROOT / "opencode.jsonc").exists()
+        content = (ROOT / "opencode.jsonc").read_text(encoding="utf-8")
+        assert "model" in content
+        assert "9router" in content
 
-    def test_opencode_template_has_placeholders(self):
-        template = ROOT / "opencode.template.jsonc"
-        assert template.exists()
-        content = template.read_text(encoding="utf-8")
-        assert "${FREE_Model}" in content or "${Execution_Paid}" in content
+    def test_opencode_config_has_agents(self):
+        config_file = ROOT / "opencode.jsonc"
+        assert config_file.exists()
+        content = config_file.read_text(encoding="utf-8")
+        assert "build" in content
+        assert "plan" in content
 
-    def test_gitignore_opencode(self):
-        gitignore = ROOT / ".gitignore"
-        assert gitignore.exists()
-        content = gitignore.read_text(encoding="utf-8")
-        assert "opencode.jsonc" in content
+    def test_opencode_config_committed(self):
+        assert (ROOT / "opencode.jsonc").exists()
+        content = (ROOT / "opencode.jsonc").read_text(encoding="utf-8")
+        assert "9router" in content
 
 
 class TestNoDeadCode:
