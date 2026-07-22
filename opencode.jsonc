@@ -2,11 +2,12 @@
   "$schema": "https://opencode.ai/config.json",
   "model": "9router/FREE_Model",
   "default_agent": "build",
-
   "provider": {
     "9router": {
       "name": "9Router Gateway",
-      "env": ["NINEROUTER_API_KEY"],
+      "env": [
+        "NINEROUTER_API_KEY"
+      ],
       "options": {
         "baseURL": "http://localhost:20128/v1",
         "apiKey": "{env:NINEROUTER_API_KEY}",
@@ -20,29 +21,45 @@
           "name": "FREE_Model",
           "reasoning": true,
           "tool_call": true,
-          "limit": {"context": 200000, "output": 8192}
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
         },
         "Execution_Paid": {
           "name": "Execution_Paid",
           "reasoning": true,
           "tool_call": true,
-          "limit": {"context": 200000, "output": 8192}
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
         },
         "Pro_Plan": {
           "name": "Pro_Plan",
           "reasoning": true,
           "tool_call": true,
-          "limit": {"context": 200000, "output": 8192}
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
+        },
+        "Codex": {
+          "name": "Codex",
+          "reasoning": true,
+          "tool_call": true,
+          "limit": {
+            "context": 200000,
+            "output": 8192
+          }
         }
       }
     }
   },
-
   "instructions": [
     "PERSONA.md",
     "PROTOCOL.md"
   ],
-
   "agent": {
     "build": {
       "description": "Farewell Helper - full access, eksekusi",
@@ -93,34 +110,44 @@
       "mode": "subagent"
     }
   },
-
   "mcp": {
     "farewell-helper": {
       "type": "local",
-      "command": ["py", "-m", "farewell_helper.mcp", "--stdio"],
+      "command": [
+        "py",
+        "-m",
+        "farewell_helper.mcp",
+        "--stdio"
+      ],
       "enabled": true,
       "environment": {
         "PYTHONUNBUFFERED": "1"
       }
     }
   },
-
   "skills": {
-    "paths": ["skills"]
-  },
-
-  "experimental": {
-    "policies": [
-      { "action": "provider.use", "effect": "deny", "resource": "*" },
-      { "action": "provider.use", "effect": "allow", "resource": "9router" }
+    "paths": [
+      "skills"
     ]
   },
-
+  "experimental": {
+    "policies": [
+      {
+        "action": "provider.use",
+        "effect": "deny",
+        "resource": "*"
+      },
+      {
+        "action": "provider.use",
+        "effect": "allow",
+        "resource": "9router"
+      }
+    ]
+  },
   "compaction": {
     "auto": true,
     "buffer": 10000
   },
-
   "watcher": {
     "ignore": [
       ".git/**",
@@ -132,16 +159,20 @@
       "*.pyc"
     ]
   },
-
   "formatter": {
     "python": {
-      "command": ["ruff", "format", "--stdin-filename", "$FILE"],
-      "extensions": [".py"]
+      "command": [
+        "ruff",
+        "format",
+        "--stdin-filename",
+        "$FILE"
+      ],
+      "extensions": [
+        ".py"
+      ]
     }
   },
-
   "lsp": true,
-
   "command": {
     "/daily": {
       "description": "Health check + sync combo + resolve config",

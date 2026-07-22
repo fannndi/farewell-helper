@@ -4,92 +4,73 @@ from pathlib import Path
 from . import config
 
 
-COMBO_CONFIG = config.ROOT_DIR / "farewell.combos.jsonc"
+DEFAULT_MODEL_CONFIG = {
+    "reasoning": True,
+    "tool_call": True,
+    "limit": {"context": 200000, "output": 8192},
+}
 
 
-def _strip_jsonc(text: str) -> str:
-    return "\n".join(
-        line for line in text.split("\n")
-        if not line.strip().startswith("//")
-    )
+def _fetch_api_combos() -> dict | None:
+    from .router_client import fetch_combos
+    return fetch_combos()
 
 
-def _read_combos_file() -> dict:
-    if not COMBO_CONFIG.exists():
-        return {}
-    try:
-        text = COMBO_CONFIG.read_text(encoding="utf-8")
-        text = _strip_jsonc(text)
-        return json.loads(text)
-    except Exception as e:
-        from .helpers import warn
-        warn(f"combos config parse failed: {e}")
-        return {}
-
-
-def _build_mapping(combo_names: list[str]) -> dict[str, str]:
-    """Build placeholder→model mapping: {name → 9router/name}."""
-    return {name: f"9router/{name}" for name in combo_names}
-
-
-def _extract_placeholders(tpl: str) -> list[str]:
-    return re.findall(r"\$\{(\w+)\}", tpl)
-
-
-def render(source: str | None = None) -> dict | None:
-    template = config.ROOT_DIR / "opencode.template.jsonc"
+def render() -> dict | None:
     target = config.ROOT_DIR / "opencode.jsonc"
-    if not template.exists():
+    if not target.exists():
         return None
 
-    tpl = template.read_text(encoding="utf-8")
-    placeholders = _extract_placeholders(tpl)
+    api_data = _fetch_api_combos()
 
-    mapping: dict[str, str] = {}
-    source_used = source or ""
+    # Read current config
+    raw = target.read_text(encoding="utf-8")
+    config_data = json.loads(raw)
+    orig_config = json.dumps(config_data, sort_keys=True)
 
-    # 1) Try dashboard API
-    if not source_used:
-        from .router_client import fetch_combos
-        api_data = fetch_combos()
-        if api_data:
-            names = list(api_data.keys())
-            mapping = _build_mapping(names)
-            source_used = "api"
-            extra = [n for n in names if n not in placeholders]
-            if extra:
-                from .helpers import info
-                info(f"API combos not in template: {', '.join(extra)}")
+    # Ensure provider.9router.models exists
+    provider = config_data.setdefault("provider", {})
+    nine = provider.setdefault("9router", {})
+    models = nine.setdefault("models", {})
 
-    # 2) Fallback: file config
-    if not mapping:
-        file_data = _read_combos_file()
-        if file_data:
-            mapping = _build_mapping(list(file_data.keys()))
-            source_used += "+file" if source_used else "file"
+    combo_names = list(api_data.keys()) if api_data else list(models.keys())
 
-    # 3) Last resort: build from placeholders
-    if not mapping:
-        mapping = _build_mapping(placeholders)
-        source_used += "+placeholder" if source_used else "placeholder"
+    # Add/update each combo as a model entry
+    for name in combo_names:
+        if name not in models:
+            models[name] = {"name": name, **DEFAULT_MODEL_CONFIG}
 
-    resolved = set()
-    for ph in placeholders:
-        val = mapping.get(ph)
-        if val:
-            tpl = tpl.replace(f"${{{ph}}}", val)
-            resolved.add(ph)
+    # Update top-level model if not set to a known combo
+    top_model = config_data.get("model", "")
+    if not top_model or top_model == "9router/":
+        config_data["model"] = f"9router/{combo_names[0]}" if combo_names else "9router/FREE_Model"
 
-    unresolved = [ph for ph in placeholders if ph not in resolved]
-    if unresolved:
-        from .helpers import warn
-        warn(f"Unresolved placeholders: {', '.join(unresolved)}")
+    # Update agent models to use known combos
+    agents = config_data.get("agent", {})
+    agent_model_map = {
+        "build": "Execution_Paid",
+        "plan": "Pro_Plan",
+    }
+    for agent_name, preferred in agent_model_map.items():
+        if preferred in models:
+            agents.setdefault(agent_name, {})["model"] = f"9router/{preferred}"
 
-    target.write_text(tpl, encoding="utf-8")
+    new_raw = json.dumps(config_data, indent=2) + "\n"
+
+    if new_raw == orig_config:
+        return {
+            "combos": combo_names,
+            "source": "api" if api_data else "existing",
+            "target": str(target),
+            "unresolved": [],
+            "updated": False,
+        }
+
+    target.write_text(new_raw, encoding="utf-8")
     return {
-        "combos": list(resolved),
-        "source": source_used,
-        "template": str(template),
+        "combos": combo_names,
+        "source": "api" if api_data else "existing",
         "target": str(target),
-        "unresolved": unresolved,
+        "unresolved": [],
+        "updated": True,
     }

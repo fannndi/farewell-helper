@@ -136,13 +136,13 @@ def main() -> None:
 
 def _cmd_sync() -> None:
     from ..sync import render
-    from ..helpers import ok, fail, info
+    from ..helpers import ok, fail
     meta = render()
     if meta:
         src = meta.get("source", "?")
-        ok(f"Combos synced ({len(meta.get('combos', []))} combo(s), source: {src})")
+        ok(f"Config synced ({len(meta.get('combos', []))} combo(s), source: {src})")
     else:
-        fail("template not found")
+        fail("opencode.jsonc not found")
 
 
 def _cmd_daily() -> None:
@@ -158,29 +158,23 @@ def _cmd_daily() -> None:
 
     _check_sub_project()
 
-    info("Step 2/5: Fetch combos from 9Router")
-    from ..router_client import fetch_combos
-    combos = fetch_combos()
-    if combos:
-        ok(f"Combos from API ({len(combos)} combo(s))")
-        for name, models in combos.items():
-            info(f"  {name}: {', '.join(models[:2])}{'...' if len(models) > 2 else ''}")
-    else:
-        info("API combos unavailable (auth_token missing or 9Router down)")
-        info("Falling back to local config or placeholder convention")
-
-    info("Step 3/5: Resolve config template")
+    info("Step 2/5: Resolve config with 9Router combos")
     from ..sync import render
     meta = render()
-    if meta:
-        src = meta.get("source", "?")
-        ok(f"Config synced ({len(meta.get('combos', []))} combo(s), source: {src})")
-        if meta.get("unresolved"):
-            for ph in meta["unresolved"]:
-                info(f"  Unresolved placeholder: {ph}")
-    else:
-        fail("Sync failed — template not found")
+    if not meta:
+        fail("Sync failed — opencode.jsonc not found")
         return
+    src = meta.get("source", "?")
+    combos = meta.get("combos", [])
+    ok(f"Config synced ({len(combos)} combo(s), source: {src})")
+    for name in combos:
+        info(f"  {name}")
+    if meta.get("updated"):
+        from ..helpers import info as inf
+        inf("Config updated with new combos")
+    else:
+        from ..helpers import info as inf
+        inf("Config already up-to-date")
 
     info("Step 4/5: Token-saver check")
     _check_token_saver()
