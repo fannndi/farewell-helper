@@ -119,7 +119,7 @@ def verify() -> dict:
         results.append({
             "category": "9router",
             "status": "pass" if combo["health"] == "ok" else "warn",
-            "label": f"Combos: {combo['combos']} active ({combo['strategy']})",
+            "label": f"Combos: {combo['combos']} active",
         })
         for issue in combo["issues"]:
             results.append({"category": "9router", "status": "warn", "label": f"Combo issue: {issue}"})

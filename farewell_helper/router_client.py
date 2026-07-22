@@ -89,14 +89,21 @@ def combo_health_check() -> dict:
     if not combo_names:
         issues.append("No combos configured — add at least one in 9Router dashboard")
 
-    strategy = settings.get("comboStrategy", "fallback")
-    if strategy == "round-robin":
-        suggestions.append("Fallback strategy recommended for farewell-helper (predictable model selection)")
+    combo_strategies = settings.get("comboStrategies", {})
+    for name in combo_names:
+        cs = combo_strategies.get(name, {})
+        if cs.get("fallbackStrategy") == "fallback":
+            pass
+        elif cs.get("fallbackStrategy") == "round-robin":
+            suggestions.append(f"'{name}' is round-robin — fallback recommended for predictable output")
 
     if settings.get("rtkEnabled"):
-        suggestions.append("RTK enabled — good for tool_result compression")
+        suggestions.append("RTK enabled — good: tool_result compression active")
     else:
         suggestions.append("RTK disabled — enable to reduce input tokens 20-40%")
+
+    if settings.get("headroomEnabled"):
+        suggestions.append("Headroom enabled — external compression proxy active")
 
     health = "degraded" if issues else "ok"
 
@@ -104,7 +111,7 @@ def combo_health_check() -> dict:
         "health": health,
         "combos": len(combo_names),
         "combo_names": combo_names,
-        "strategy": strategy,
+        "settings_available": bool(settings),
         "issues": issues,
         "suggestions": suggestions,
     }

@@ -171,7 +171,7 @@ def _cmd_daily() -> None:
         ok(f"9Router ALIVE ({alive['latency_ms']}ms)")
         from ..router_client import combo_health_check
         combo = combo_health_check()
-        info(f"Combos: {combo['combos']} ({', '.join(combo['combo_names'][:4])})")
+        info(f"Combos: {combo['combos']} ({', '.join(combo.get('combo_names', [])[:4])})")
         for s in combo["suggestions"][:2]:
             info(f"  Tip: {s}")
     else:
@@ -250,7 +250,7 @@ def _cmd_start() -> None:
                 info(f"  {c}")
             info("Disable Ponytail + Caveman: 9Router dashboard > Token Saver")
         combo = combo_health_check()
-        info(f"Combos: {combo['combos']} active ({combo['strategy']})")
+        info(f"Combos: {combo['combos']} active")
         for s in combo["suggestions"][:2]:
             info(f"  Tip: {s}")
     else:
