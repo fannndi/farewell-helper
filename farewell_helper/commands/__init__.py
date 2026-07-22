@@ -108,6 +108,7 @@ def main() -> None:
     p = sub.add_parser("assist", help="Project assistant: state overview + smart suggestions")
     p.add_argument("--project", "-p", default="farewell-helper", help="Project name")
     p.add_argument("--code", "-c", default="001", help="Project code")
+    p.add_argument("--audit", action="store_true", help="Refresh workspace audit")
     p.set_defaults(func=lambda args: _cmd_assist(args))
 
     args = parser.parse_args()

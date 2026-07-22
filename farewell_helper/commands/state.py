@@ -167,6 +167,10 @@ def assist(args: argparse.Namespace) -> None:
             marker = c(" *", "green") if p["code"] == code else ""
             print(f"  {p['code']} {p['name']}{marker}")
 
+    audit_file = fconfig.project_farewell_dir(code) / "context" / "workspace-audit.md"
+    audit_exists = audit_file.exists()
+    print(f"  Audit:     {c('available', 'green') if audit_exists else c('not run', 'yellow')}")
+
     print(f"\n  {c('Suggestions', 'cyan')}")
     suggestions: list[str] = []
     if terms == 0:
@@ -178,8 +182,19 @@ def assist(args: argparse.Namespace) -> None:
         todo_tasks = [l.strip() for l in todo_content.split("\n") if l.strip().startswith("- [ ]")]
         for t in todo_tasks[:3]:
             suggestions.append(f"  {t}")
+    if not audit_exists:
+        suggestions.append("No workspace audit — run `assist --audit` to generate")
+    if not sessions:
+        suggestions.append("No session history — start working to build context")
     if not suggestions:
         suggestions.append("All clear. Ready for Boss's next goal.")
+
     for s in suggestions:
         print(f"  {c('->', 'green')} {s}")
+
+    action_flag = getattr(args, "audit", False)
+    if action_flag and proj_path:
+        from ..setup_project import _generate_workspace_audit
+        _generate_workspace_audit(proj_path, code)
+        ok("Workspace audit refreshed")
     print()
