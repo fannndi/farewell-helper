@@ -1,25 +1,25 @@
 ---
 name: farewell-grilling
-description: Use when Boss wants to stress-test thinking, mentions "grill", or a task is ambiguous — relentlessly interview Boss until every branch is resolved.
+description: Use when Boss wants to stress-test a plan, mentions "grill", or a task is ambiguous — relentless interview building shared vocabulary. Credits: adapted from mattpocock/skills.
 ---
 
 # Grilling
 
-Interview Boss relentlessly about every aspect of the plan until we reach shared understanding. Walk down each branch of the decision tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
+Interview Boss about every aspect of the plan. One question at a time, wait for feedback. If a fact can be looked up in the environment (filesystem, git, tools), look it up — don't ask.
 
-Ask questions **one at a time**, waiting for feedback before continuing. Multiple questions at once is bewildering.
+## Interview Loop
 
-If a *fact* can be found by exploring the environment (filesystem, tools, git log, etc.), look it up rather than asking Boss. The *decisions*, though, are Boss's — put each one forward and wait for the answer.
+1. Clarify the goal: "What outcome are we trying to achieve?"
+2. Identify constraints: "What can't change?"
+3. Walk each decision branch: "If X, then... If not X, then..."
+4. Test edge cases: "What happens when...?"
+5. Surface risks: "What could go wrong?"
+6. Confirm: "So shared understanding is: [summary]. Correct?"
 
-Do not act on the plan until Boss confirms shared understanding has been reached. Then proceed to `farewell-tdd` if coding, or BUILD mode if approved.
+## During the interview: build shared language
 
-## The Interview Loop
+Challenge every vague term. When Boss uses a term not in `AUTO-GLOSSARY.md`, ask "What exactly do you mean by X?" Add the definition. For irreversible architectural decisions, write an ADR (`docs/adr/ADR-NNN.md`).
 
-1. Clarify the goal — "What outcome are we trying to achieve?"
-2. Identify constraints — "What can't change?"
-3. Walk each decision — "If X, then... If not X, then..."
-4. Test edge cases — "What happens when...?"
-5. Identify risks — "What could go wrong?"
-6. Confirm — "So our shared understanding is: [summary]. Is that right?"
+## Output
 
-Do not proceed to any other skill until Boss confirms step 6.
+When Boss confirms: updated glossary with new terms, ADRs for significant decisions, clear plan ready for `farewell-tdd`. Do not act until step 6 confirmed.

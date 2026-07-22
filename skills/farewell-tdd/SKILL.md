@@ -1,36 +1,28 @@
 ---
 name: farewell-tdd
-description: Use when building features or fixing bugs test-first, implementing with tests, or when the task needs integration tests — test-driven development with red-green-refactor loop.
+description: Use when building features or fixing bugs test-first, writing new modules, or reviewing code — test-driven development with review and design in one loop. Credits: adapted from mattpocock/skills.
 ---
 
-# Test-Driven Development
+# TDD + Review + Design
 
-TDD is the red → green loop. Use this as the reference for every cycle: what a good test is, where tests go, anti-patterns, and the rules of the loop.
+## Phase 1: TDD (RED → GREEN)
 
-When exploring the codebase, read `AUTO-GLOSSARY.md` (if it exists) so test names match the project's domain language.
+Write the failing test at a pre-agreed **seam** — the public boundary where you observe behaviour without reaching inside. Mock only at system boundaries (APIs, DB, time, filesystem). Never mock your own classes.
 
-## What a good test is
+Vertical slices: one test → one minimal implementation → repeat. No horizontal slicing (all tests first, then all code).
 
-Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification — "user can checkout with valid cart" tells you exactly what capability exists — and survives refactors because it doesn't care about internal structure.
+Anti-patterns: tautological tests (expected value computed the same way as the code), implementation-coupled tests (mock internal collaborators), asserting on call counts.
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+## Phase 2: Code Review (Two-Axis)
 
-## Seams — where tests go
+After TDD, review the diff on two independent axes. Run them as separate passes.
 
-A **seam** is the public boundary you test at: the interface where you observe behavior without reaching inside. Tests live at seams, never against internals.
+**Standards** — naming clarity, immutability, error handling, no hardcoded secrets. Apply Fowler smell baseline: duplicated code, feature envy, primitive obsession, speculative generality, shotgun surgery, message chains, middle man.
 
-**Test only at pre-agreed seams.** Before writing any test, write down the seams under test and confirm them with Boss. No test is written at an unconfirmed seam.
+**Spec** — does the code implement what was asked? Check: missing requirements, scope creep, wrong implementation.
 
-Ask: "What's the public interface, and which seams should we test?"
+Report Standards and Spec separately. One axis passing doesn't excuse the other.
 
-## Anti-patterns
+## Phase 3: Design Check
 
-- **Implementation-coupled** — mocks internal collaborators, tests private methods, or verifies through a side channel. The tell: the test breaks when you refactor but behavior hasn't changed.
-- **Tautological** — the assertion recomputes the expected value the way the code does, so it passes by construction. Expected values must come from an independent source of truth — a known-good literal, a worked example, the spec.
-- **Horizontal slicing** — writing all tests first, then all implementation. Bulk tests verify _imagined_ behavior. Work in **vertical slices**: one test → one implementation → repeat.
-
-## Rules of the loop
-
-- **Red before green.** Write the failing test first, then only enough code to pass it.
-- **One slice at a time.** One seam, one test, one minimal implementation per cycle.
-- **Refactoring is not part of the loop.** It belongs to the review stage (see `farewell-code-review`), not the red → green implementation cycle.
+For new modules: is there deep behaviour behind a small interface? Is the interface placed at a clean seam? Can important behaviour be tested through the interface? One adapter = hypothetical seam. Two adapters = real one. Don't abstract for single implementations.

@@ -36,8 +36,11 @@ def verify() -> dict:
     })
 
     skill_names = ["farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs",
-                   "farewell-code-review", "farewell-codebase-design",
-                   "farewell-grill-with-docs", "farewell-grilling"]
+                   "farewell-grilling", "farewell-python", "farewell-flutter",
+                   "farewell-frontend", "farewell-c", "farewell-devops",
+                   "farewell-rust", "farewell-api-design", "farewell-error-handling",
+                   "farewell-production-audit", "farewell-git",
+                   "farewell-workspace-audit"]
     skill_mentioned = 0
     for skill_name in skill_names:
         found = False

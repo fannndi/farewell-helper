@@ -80,3 +80,38 @@ If you see warnings from `verify` or `start`, open `:20128/dashboard/token-saver
 3. Enforcement via mechanism, not text
 4. Deletion over addition. Boring over clever.
 5. PERSONA.md is the one and only behavioral authority.
+
+## Skills
+
+8 minimal skills, auto-discovered by OpenCode from `skills/` directory. Each skill is self-contained — ECC and mattpocock/skills were used as style references, not sources.
+
+| Skill | Purpose |
+|-------|---------|
+| `farewell-persona` | Identity, Boss triggers, caveman style |
+| `farewell-tdd` | TDD + code review + module design (3-in-1) |
+| `farewell-diagnosing-bugs` | 6-phase debug loop |
+| `farewell-grilling` | Interview loop + shared vocabulary + ADR |
+| `farewell-python` | Python + FastAPI + pytest |
+| `farewell-flutter` | Dart + Flutter + BLoC/Riverpod |
+| `farewell-frontend` | React + Vue + component patterns |
+| `farewell-c` | C + kernel: memory, concurrency, Kbuild |
+| `farewell-devops` | Docker + CI/CD + Postgres + Redis |
+| `farewell-rust` | Rust: ownership, errors, concurrency |
+| `farewell-api-design` | REST API: URLs, pagination, error envelope, versioning |
+| `farewell-error-handling` | Typed errors, retry, circuit breaker, boundary rules |
+| `farewell-production-audit` | Pre-launch checklist: auth, data, deploy, edge cases |
+| `farewell-git` | Branching, commits, PRs, merge conflicts |
+| `farewell-workspace-audit` | Audit repo surface, tools, recommend setup |
+
+See `STACKS.md` for which skill to use per language or project type.
+
+## Credits
+
+- [Matt Pocock's Skills](https://github.com/mattpocock/skills) — minimal engineering methodology style reference
+- [ECC by affaan-m](https://github.com/affaan-m/ECC) — language + framework pattern knowledge reference
+- [9Router](https://github.com/ai-shifu/9router) — AI model gateway
+- [OpenCode](https://github.com/anomalyco/opencode) — agent runtime
+
+## Stack Reference
+
+`STACKS.md` maps every language and project type to the right skill. AI reads it on-demand based on the active stack.
