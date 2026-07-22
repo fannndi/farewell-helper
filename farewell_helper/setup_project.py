@@ -120,7 +120,7 @@ def _add_gitignore(target: Path, dot_dir: Path):
         gitignore.write_text(entry.strip() + "\n", encoding="utf-8")
 
 
-def update_metadata(code: str, name: str, field: str, value: Any):
+def update_metadata(code: str, name: str, field: str, value: Any) -> None:
     meta_file = config.FAREWELL_DIR / "metadata.json"
     if not meta_file.exists():
         meta_data = {}
@@ -147,6 +147,27 @@ def get_metadata(code: str, name: str) -> dict:
     import json
     meta_data = json.loads(meta_file.read_text(encoding="utf-8"))
     return meta_data.get(code, {}).get(name, {})
+
+
+def check_sub_project() -> None:
+    """Detect if cwd is in an unregistered project outside workspace."""
+    from pathlib import Path
+    from .commands.project import _load_projects
+    from .helpers import info, warn
+
+    cwd = Path.cwd().resolve()
+    registered_paths = {config.project_path(p["code"]) for p in _load_projects() if config.project_path(p["code"])}
+    if cwd in registered_paths or cwd.parent in registered_paths or cwd == config.ROOT_DIR:
+        return
+
+    result = detect_sub_project(cwd)
+    if result and not result["has_farewell"]:
+        warn(f"cwd is outside farewell-helper: {cwd}")
+        info(f"Detected git repo: {result['name']}")
+        info("Unregistered. Run 'setup-project <path>' to register")
+    elif result and result["has_farewell"]:
+        warn(f"Detected repo with .farewell: {result['name']}")
+        info("It may already be registered. Run 'project list' to check")
 
 
 def get_effective_skills(project_path: Path) -> list[str]:

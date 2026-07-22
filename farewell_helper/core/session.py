@@ -59,7 +59,7 @@ def start_session(code: str, name: str, task: str, model: str) -> str:
     return session_id
 
 
-def end_session(code: str, name: str, session_id: str, status: str, summary: str):
+def end_session(code: str, name: str, session_id: str, status: str, summary: str) -> None:
     lineage = read_json(_lineage_path(code, name))
     if not lineage:
         return

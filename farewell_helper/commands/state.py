@@ -1,31 +1,10 @@
 """System state commands — status, verify, init, health."""
+import argparse
 import re
 import subprocess
 import sys
 from ..helpers import c, ok, fail, info
 from .. import config as fconfig
-
-
-def _check_cwd_sub_project() -> None:
-    """Check if cwd is outside all registered projects."""
-    from pathlib import Path
-    from .. import config as cfg
-    from ..setup_project import detect_sub_project
-    from .project import _load_projects
-    cwd = Path.cwd().resolve()
-    registered_paths = {cfg.project_path(p["code"]) for p in _load_projects() if cfg.project_path(p["code"])}
-    if cwd in registered_paths or cwd.parent in registered_paths or cwd == cfg.ROOT_DIR:
-        return
-    result = detect_sub_project(cwd)
-    if result and not result["has_farewell"]:
-        from ..helpers import warn, info
-        warn(f"cwd outside farewell-helper: {cwd}")
-        info(f"Git repo detected: {result['name']}")
-        info("Not registered. Run 'setup-project <path>'")
-    elif result and result["has_farewell"]:
-        from ..helpers import warn, info
-        warn(f"Detected .farewell repo: {result['name']}")
-        info("May be registered. Run 'project list' to check")
 
 
 def status() -> None:
@@ -42,7 +21,8 @@ def status() -> None:
     for f in persona_files():
         found = c("found", "green") if f.exists() else c("missing", "yellow")
         print(f"  {f.name}: {found}")
-    _check_cwd_sub_project()
+    from ..setup_project import check_sub_project
+    check_sub_project()
     print()
 
 
@@ -66,7 +46,7 @@ def verify() -> None:
     print()
 
 
-def health(args) -> None:
+def health(args: argparse.Namespace) -> None:
     from ..router_client import ping
     from ..core.memory import memory_content
     from ..core.session import recent_sessions

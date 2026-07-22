@@ -1,28 +1,5 @@
 """CLI entry point — argparse router delegating to modular command files."""
 import argparse
-from pathlib import Path
-
-
-def _check_sub_project() -> None:
-    """Detect if cwd is in an unregistered project outside workspace."""
-    cwd = Path.cwd().resolve()
-    from .. import config as cfg
-    from ..setup_project import detect_sub_project
-    from ..commands.project import _load_projects
-    from ..helpers import info, warn
-
-    registered_paths = {cfg.project_path(p["code"]) for p in _load_projects() if cfg.project_path(p["code"])}
-    if cwd in registered_paths or cwd.parent in registered_paths or cwd == cfg.ROOT_DIR:
-        return
-
-    result = detect_sub_project(cwd)
-    if result and not result["has_farewell"]:
-        warn(f"cwd is outside farewell-helper: {cwd}")
-        info(f"Detected git repo: {result['name']}")
-        info("Unregistered. Run 'setup-project <path>' to register")
-    elif result and result["has_farewell"]:
-        warn(f"Detected repo with .farewell: {result['name']}")
-        info("It may already be registered. Run 'project list' to check")
 
 
 def main() -> None:
@@ -156,7 +133,8 @@ def _cmd_daily() -> None:
         return
     ok("Persona verified")
 
-    _check_sub_project()
+    from ..setup_project import check_sub_project
+    check_sub_project()
 
     info("Step 2/5: Resolve config with 9Router combos")
     from ..sync import render
@@ -234,7 +212,8 @@ def _cmd_start() -> None:
     ok(f"All persona files present ({len(persona_paths)} files)")
     ok(f"Active project: {active['code']}-{active['name']}")
 
-    _check_sub_project()
+    from ..setup_project import check_sub_project
+    check_sub_project()
 
     from ..router_client import ping
     alive = ping()

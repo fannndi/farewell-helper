@@ -35,7 +35,7 @@ def memory_content(code: str, name: str) -> str:
     return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
-def save_memory(code: str, name: str, content: str):
+def save_memory(code: str, name: str, content: str) -> None:
     if len(content) > MEMORY_MAX_CHARS:
         raise ValueError(f"Memory too long ({len(content)}/{MEMORY_MAX_CHARS} chars). Consolidate first.")
     d = _project_memory_dir(code)
@@ -50,7 +50,7 @@ def user_content(code: str, name: str) -> str:
     return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
-def save_user(code: str, name: str, content: str):
+def save_user(code: str, name: str, content: str) -> None:
     if len(content) > USER_MAX_CHARS:
         raise ValueError(f"User profile too long ({len(content)}/{USER_MAX_CHARS} chars).")
     d = _project_memory_dir(code)
@@ -59,7 +59,7 @@ def save_user(code: str, name: str, content: str):
 
 
 def save_session(code: str, name: str, summary: str, session_id: str | None = None,
-                 files: list[str] | None = None, msgs: int = 1):
+                 files: list[str] | None = None, msgs: int = 1) -> None:
     from datetime import datetime, timezone
     d = _project_memory_dir(code)
     _migrate_file(code, name, MEMORY_FILE, d)

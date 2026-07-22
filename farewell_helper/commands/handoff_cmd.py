@@ -1,10 +1,11 @@
 """Handoff commands — session continuity across sessions."""
+import argparse
 from pathlib import Path
 from datetime import datetime
 from ..helpers import c, ok, fail
 
 
-def handoff(args) -> None:
+def handoff(args: argparse.Namespace) -> None:
     from .. import config
     from ..commands.project import set_active, get_active
 

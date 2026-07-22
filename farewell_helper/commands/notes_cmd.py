@@ -1,8 +1,9 @@
 """Session notes and glossary commands."""
+import argparse
 from ..helpers import c, ok, fail
 
 
-def notes(args) -> None:
+def notes(args: argparse.Namespace) -> None:
     code = getattr(args, "code", None) or "001"
     name = getattr(args, "project", None) or "farewell-helper"
     if args.action == "show":

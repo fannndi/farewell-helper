@@ -1,10 +1,11 @@
 """Task planning commands — todo management, done auto-compress."""
+import argparse
 from pathlib import Path
 from datetime import datetime
 from ..helpers import c, ok, fail, info, warn
 
 
-def todo(args) -> None:
+def todo(args: argparse.Namespace) -> None:
     from .. import config
     from ..commands.project import get_active
 
@@ -96,7 +97,7 @@ def _log_completion(proj_code: str, proj_name: str, task: str) -> None:
     memory_file.write_text(existing + entry, encoding="utf-8")
 
 
-def done(args) -> None:
+def done(args: argparse.Namespace) -> None:
     import subprocess
     from ..commands.project import get_active
     from ..core.memory import memory_content, save_memory

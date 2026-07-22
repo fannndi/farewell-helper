@@ -31,7 +31,7 @@ def context_content(code: str, name: str) -> str:
     return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
-def save_context(code: str, name: str, content: str):
+def save_context(code: str, name: str, content: str) -> None:
     d = _project_context_dir(code)
     _migrate_context(code, name, d)
     (d / "AUTO-GLOSSARY.md").write_text(content, encoding="utf-8")
@@ -52,7 +52,7 @@ def add_glossary_term(code: str, name: str, term: str, definition: str) -> bool:
     return True
 
 
-def init_context_from_archetype(code: str, name: str, archetype: dict):
+def init_context_from_archetype(code: str, name: str, archetype: dict) -> None:
     if not archetype.get("detected"):
         return
 
@@ -63,23 +63,21 @@ def init_context_from_archetype(code: str, name: str, archetype: dict):
     context_file = ctx_dir / "AUTO-GLOSSARY.md"
     _migrate_context(code, name, ctx_dir)
 
+    header = f"# AUTO-GLOSSARY - {name}\n\n"
+    meta = f"**Stack:** {stack}\n\n**Technologies:** {', '.join(skills)}\n\n"
+
     if context_file.exists():
         existing = context_file.read_text(encoding="utf-8")
         if f"**Stack:** {stack}" in existing:
             return
+        idx = existing.find("## ")
+        body = existing[idx:] if idx >= 0 else ""
+        if body:
+            meta = meta + "\n"
     else:
-        existing = f"# AUTO-GLOSSARY - {name}\n\n"
+        body = ""
 
-    lines = [f"# AUTO-GLOSSARY - {name}\n\n"]
-    lines.append(f"**Stack:** {stack}\n\n")
-    lines.append(f"**Technologies:** {', '.join(skills)}\n\n")
-
-    if "**Technologies:**" not in existing:
-        lines.append(existing)
-    else:
-        lines.append(existing)
-
-    context_file.write_text("".join(lines), encoding="utf-8")
+    context_file.write_text(header + meta + body, encoding="utf-8")
 
 
 def list_adrs(code: str, name: str) -> list[Path]:

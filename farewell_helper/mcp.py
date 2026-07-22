@@ -1,6 +1,7 @@
+import io
 import json
 import sys
-import subprocess
+from collections.abc import Callable
 from . import config
 
 TOOLS = [
@@ -26,27 +27,36 @@ TOOLS = [
     },
 ]
 
-_CMD_MAP = {
-    "farewell_helper_verify": ["verify"],
-    "farewell_helper_sync": ["sync"],
-    "farewell_helper_start": ["start"],
-    "farewell_helper_daily": ["daily"],
-}
+
+def _capture(fn: Callable[[], None]) -> str:
+    buf = io.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    try:
+        fn()
+        return json.dumps({"stdout": buf.getvalue(), "stderr": "", "exit_code": 0})
+    except SystemExit:
+        return json.dumps({"stdout": buf.getvalue(), "stderr": "", "exit_code": 0})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 
 def _run_tool(name: str) -> str:
-    args = _CMD_MAP.get(name)
-    if not args:
-        return json.dumps({"error": f"Unknown tool: {name}"})
-    try:
-        r = subprocess.run(
-            [sys.executable, "-m", "farewell_helper"] + args,
-            capture_output=True, text=True, timeout=60,
-            cwd=str(config.ROOT_DIR),
-        )
-        return json.dumps({"stdout": r.stdout, "stderr": r.stderr, "exit_code": r.returncode})
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+    if name == "farewell_helper_verify":
+        from .commands.state import verify
+        return _capture(verify)
+    if name == "farewell_helper_sync":
+        from .commands import _cmd_sync
+        return _capture(_cmd_sync)
+    if name == "farewell_helper_start":
+        from .commands import _cmd_start
+        return _capture(_cmd_start)
+    if name == "farewell_helper_daily":
+        from .commands import _cmd_daily
+        return _capture(_cmd_daily)
+    return json.dumps({"error": f"Unknown tool: {name}"})
 
 
 def _read() -> dict:
@@ -65,7 +75,7 @@ def _write(msg: dict):
     sys.stdout.flush()
 
 
-def serve():
+def serve() -> None:
     while True:
         msg = _read()
         if not msg:
@@ -111,7 +121,7 @@ def serve():
             })
 
 
-def main():
+def main() -> None:
     if "--stdio" in sys.argv:
         serve()
     else:
