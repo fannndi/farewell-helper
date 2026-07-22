@@ -76,6 +76,40 @@ def fetch_combos() -> dict | None:
         return None
 
 
+def combo_health_check() -> dict:
+    """Validate 9Router combos for farewell-helper optimal usage.
+    Returns {health: str, combos: int, issues: list[str], suggestions: list[str]}."""
+    combos = fetch_combos() or {}
+    settings = fetch_settings()
+
+    issues: list[str] = []
+    suggestions: list[str] = []
+
+    combo_names = list(combos.keys())
+    if not combo_names:
+        issues.append("No combos configured — add at least one in 9Router dashboard")
+
+    strategy = settings.get("comboStrategy", "fallback")
+    if strategy == "round-robin":
+        suggestions.append("Fallback strategy recommended for farewell-helper (predictable model selection)")
+
+    if settings.get("rtkEnabled"):
+        suggestions.append("RTK enabled — good for tool_result compression")
+    else:
+        suggestions.append("RTK disabled — enable to reduce input tokens 20-40%")
+
+    health = "degraded" if issues else "ok"
+
+    return {
+        "health": health,
+        "combos": len(combo_names),
+        "combo_names": combo_names,
+        "strategy": strategy,
+        "issues": issues,
+        "suggestions": suggestions,
+    }
+
+
 def fetch_settings() -> dict:
     """Fetch 9Router settings. Returns dict with token-saver keys or empty on failure."""
     url = f"{config.router_base_url()}/api/settings"

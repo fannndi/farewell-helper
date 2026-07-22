@@ -169,6 +169,11 @@ def _cmd_daily() -> None:
     alive = ping()
     if alive["alive"]:
         ok(f"9Router ALIVE ({alive['latency_ms']}ms)")
+        from ..router_client import combo_health_check
+        combo = combo_health_check()
+        info(f"Combos: {combo['combos']} ({', '.join(combo['combo_names'][:4])})")
+        for s in combo["suggestions"][:2]:
+            info(f"  Tip: {s}")
     else:
         info("9Router not running — start with: 9router")
     ok("Daily check complete")
@@ -236,7 +241,7 @@ def _cmd_start() -> None:
     alive = ping()
     if alive["alive"]:
         ok(f"9Router ALIVE ({alive['latency_ms']}ms)")
-        from ..router_client import check_token_saver_conflicts
+        from ..router_client import check_token_saver_conflicts, combo_health_check
         conflicts = check_token_saver_conflicts()
         if conflicts:
             from ..helpers import warn
@@ -244,6 +249,10 @@ def _cmd_start() -> None:
             for c in conflicts:
                 info(f"  {c}")
             info("Disable Ponytail + Caveman: 9Router dashboard > Token Saver")
+        combo = combo_health_check()
+        info(f"Combos: {combo['combos']} active ({combo['strategy']})")
+        for s in combo["suggestions"][:2]:
+            info(f"  Tip: {s}")
     else:
         info("9Router not running — start with: 9router")
 

@@ -114,6 +114,15 @@ def verify() -> dict:
                 "status": "pass",
                 "label": "Token saver: no conflicts with PERSONA.md",
             })
+        from .router_client import combo_health_check
+        combo = combo_health_check()
+        results.append({
+            "category": "9router",
+            "status": "pass" if combo["health"] == "ok" else "warn",
+            "label": f"Combos: {combo['combos']} active ({combo['strategy']})",
+        })
+        for issue in combo["issues"]:
+            results.append({"category": "9router", "status": "warn", "label": f"Combo issue: {issue}"})
 
     total_pass = sum(1 for r in results if r["status"] == "pass")
     total_warn = sum(1 for r in results if r["status"] == "warn")
