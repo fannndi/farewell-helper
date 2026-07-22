@@ -5,9 +5,9 @@
   "generatedAt": 1773763200000,
 
   "summary": {
-    "files": 39,
-    "loc": 3043,
-    "modules": 23,
+    "files": 37,
+    "loc": 2686,
+    "modules": 21,
     "cliCommands": 17,
     "mcpTools": 4,
     "skillFiles": 4,
@@ -76,10 +76,8 @@
     { "name": "farewell_helper/verify.py", "loc": 80, "purpose": "Persona + config + skills + 9Router verification", "exports": ["verify()"], "deps": ["config", "router_client"] },
     { "name": "farewell_helper/archetype.py", "loc": 153, "purpose": "Project stack detection from file markers", "exports": ["detect()", "save_archetype()", "load_archetype()"], "deps": ["config"] },
     { "name": "farewell_helper/context_manager.py", "loc": 76, "purpose": "Per-project AUTO-GLOSSARY.md", "exports": ["add_glossary_term()", "context_content()"], "deps": ["config"] },
-    { "name": "farewell_helper/cache_monitor.py", "loc": 191, "purpose": "Token usage + context budget tracking", "exports": ["get_daily_stats()", "get_session_context_budget()", "estimate_cost()"], "deps": ["config"] },
     { "name": "farewell_helper/pre_commit.py", "loc": 36, "purpose": "Quality gate: pytest + TODO scan", "exports": ["check()"], "deps": ["config"] },
     { "name": "farewell_helper/setup_project.py", "loc": 176, "purpose": "External repo registration", "exports": ["analyze()", "update_metadata()"], "deps": ["config", "archetype", "context_manager"] },
-    { "name": "farewell_helper/task_planner.py", "loc": 167, "purpose": "Goal -> tickets decomposition", "exports": ["classify_goal()", "decompose()", "format_tickets()"], "deps": ["config", "archetype"] },
     { "name": "farewell_helper/core/io.py", "loc": 25, "purpose": "Atomic JSON read/write", "exports": ["read_json()", "write_json()"], "deps": ["stdlib"] },
     { "name": "farewell_helper/core/memory.py", "loc": 68, "purpose": "MEMORY.md + USER.md per project", "exports": ["memory_content()", "save_memory()", "save_user()"], "deps": ["config", "core/io"] },
     { "name": "farewell_helper/core/session.py", "loc": 79, "purpose": "Session lifecycle + handoff", "exports": ["start_session()", "generate_handoff()", "last_handoff()"], "deps": ["config", "core/io"] },

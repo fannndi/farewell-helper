@@ -1,0 +1,55 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: pip install -e .
+      - name: Test
+        run: python -m pytest tests/ -q --tb=short
+      - name: Check dead code
+        run: |
+          ! test -f farewell_helper/task_planner.py
+          ! test -f farewell_helper/cache_monitor.py
+      - name: Check persona files
+        run: |
+          test -f PERSONA.md
+          test -f PROTOCOL.md
+      - name: Check skill frontmatter
+        run: |
+          for f in skills/*/SKILL.md; do
+            grep -q "description: Use when" "$f" || { echo "$f missing 'Use when' frontmatter"; exit 1; }
+          done
+      - name: Check combo config
+        run: |
+          python -c "
+import json
+# validate farewell.combos.jsonc is valid JSON (strip // lines first)
+text = open('farewell.combos.jsonc').read()
+lines = [l for l in text.split(chr(10)) if not l.strip().startswith('//')]
+data = json.loads(chr(10).join(lines))
+assert 'FREE_Model' in data
+assert 'Execution_Paid' in data
+print('Combos OK:', list(data.keys()))
+"
+      - name: Check version consistency
+        run: |
+          py_version=$(python -c "from farewell_helper import __version__; print(__version__)")
+          json_version=$(python -c "import json; print(json.load(open('farewell.json'))['version'])")
+          toml_version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "py: $py_version  json: $json_version  toml: $toml_version"
+          [ "$py_version" = "$json_version" ] && [ "$json_version" = "$toml_version" ]

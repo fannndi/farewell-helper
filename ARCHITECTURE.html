@@ -139,9 +139,9 @@ body {
     <div class="sub">OpenCode · 9Router · skills · persona</div>
   </div>
   <div id="rail-stats">
-    <div class="stat"><span class="val" id="st-files">39</span> <span class="lbl">files</span></div>
-    <div class="stat"><span class="val" id="st-loc">3,043</span> <span class="lbl">LOC</span></div>
-    <div class="stat"><span class="val" id="st-modules">23</span> <span class="lbl">modules</span></div>
+    <div class="stat"><span class="val" id="st-files">37</span> <span class="lbl">files</span></div>
+    <div class="stat"><span class="val" id="st-loc">2,686</span> <span class="lbl">LOC</span></div>
+    <div class="stat"><span class="val" id="st-modules">21</span> <span class="lbl">modules</span></div>
     <div class="stat"><span class="val" id="st-cmds">17</span> <span class="lbl">commands</span></div>
   </div>
   <div id="rail-search"><input id="filter" placeholder="Filter modules..." oninput="filterList(this.value)"></div>
@@ -177,12 +177,10 @@ const DATA = {
     { id:"sync", name:"sync.py", path:"farewell_helper/", loc:37, type:"core", purpose:"Combos -> template resolver", exports:["render()"], deps:["config"], depsBy:["commands*"], icon:"core" },
     { id:"mcp", name:"mcp.py", path:"farewell_helper/", loc:118, type:"core", purpose:"MCP JSON-RPC 2.0 server (4 tools)", exports:["main()","serve()"], deps:["config"], depsBy:[], icon:"core" },
     { id:"verify", name:"verify.py", path:"farewell_helper/", loc:80, type:"core", purpose:"Persona+config+skills+9Router verify", exports:["verify()"], deps:["config","router_client"], depsBy:["commands*"], icon:"core" },
-    { id:"archetype", name:"archetype.py", path:"farewell_helper/", loc:153, type:"domain", purpose:"Stack detection from file markers", exports:["detect()","save_archetype()"], deps:["config"], depsBy:["setup_project","task_planner","commands*"], icon:"domain" },
+    { id:"archetype", name:"archetype.py", path:"farewell_helper/", loc:153, type:"domain", purpose:"Stack detection from file markers", exports:["detect()","save_archetype()"], deps:["config"], depsBy:["setup_project","commands*"], icon:"domain" },
     { id:"context_manager", name:"context_manager.py", path:"farewell_helper/", loc:76, type:"domain", purpose:"AUTO-GLOSSARY.md per project", exports:["add_glossary_term()","context_content()"], deps:["config"], depsBy:["setup_project","commands*"], icon:"domain" },
-    { id:"cache_monitor", name:"cache_monitor.py", path:"farewell_helper/", loc:191, type:"domain", purpose:"Token tracking + context budget", exports:["get_daily_stats()","get_session_context_budget()"], deps:["config"], depsBy:[], icon:"domain" },
     { id:"pre_commit", name:"pre_commit.py", path:"farewell_helper/", loc:36, type:"domain", purpose:"pytest + TODO/FIXME scanner", exports:["check()"], deps:["config"], depsBy:["commands*"], icon:"domain" },
     { id:"setup_project", name:"setup_project.py", path:"farewell_helper/", loc:176, type:"domain", purpose:"External repo registration + .farewell inject", exports:["analyze()","update_metadata()"], deps:["config","archetype","context_manager"], depsBy:["commands*"], icon:"domain" },
-    { id:"task_planner", name:"task_planner.py", path:"farewell_helper/", loc:167, type:"domain", purpose:"Goal -> tickets decomposition", exports:["classify_goal()","decompose()"], deps:["config","archetype"], depsBy:[], icon:"domain" },
     { id:"core_io", name:"core/io.py", path:"farewell_helper/core/", loc:25, type:"core", purpose:"Atomic JSON read/write", exports:["read_json()","write_json()"], deps:[], depsBy:["core_memory","core_session"], icon:"core" },
     { id:"core_memory", name:"core/memory.py", path:"farewell_helper/core/", loc:68, type:"core", purpose:"MEMORY.md + USER.md per project", exports:["memory_content()","save_memory()"], deps:["config","core_io"], depsBy:["commands*"], icon:"core" },
     { id:"core_session", name:"core/session.py", path:"farewell_helper/core/", loc:79, type:"core", purpose:"Session lifecycle + handoff", exports:["start_session()","generate_handoff()"], deps:["config","core_io"], depsBy:["commands*"], icon:"core" },
@@ -219,7 +217,7 @@ const DATA = {
 const PILLARS = [
   { id:"opencode", label:"OpenCode", color:"var(--accent)", modules:["mcp","commands_init","commands_state","commands_plan","commands_project","commands_handoff","commands_notes","commands_memory"], x:0.5, y:0.08 },
   { id:"ninerouter", label:"9Router", color:"var(--blue)", modules:["router_client","sync","verify"], x:0.15, y:0.45 },
-  { id:"skills", label:"Skills", color:"var(--purple)", modules:["archetype","task_planner","context_manager","cache_monitor","pre_commit","setup_project","core_learning"], x:0.85, y:0.45 },
+  { id:"skills", label:"Skills", color:"var(--purple)", modules:["archetype","context_manager","pre_commit","setup_project","core_learning"], x:0.85, y:0.45 },
   { id:"persona", label:"Persona", color:"#d29922", modules:["config","helpers","core_io","core_memory","core_session","__init__","__main__"], x:0.5, y:0.82 }
 ];
 

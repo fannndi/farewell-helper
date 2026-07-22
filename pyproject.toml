@@ -9,6 +9,10 @@ description = "OpenCode agent + 9Router model gateway + skills + persona"
 requires-python = ">=3.10"
 dependencies = []
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
 [project.scripts]
 farewell-helper = "farewell_helper.commands:main"
 
