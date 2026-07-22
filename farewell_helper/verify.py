@@ -40,7 +40,8 @@ def verify() -> dict:
                    "farewell-frontend", "farewell-c", "farewell-devops",
                    "farewell-rust", "farewell-api-design", "farewell-error-handling",
                    "farewell-production-audit", "farewell-git",
-                   "farewell-workspace-audit"]
+                   "farewell-workspace-audit", "farewell-audit",
+                   "farewell-prd"]
     skill_mentioned = 0
     for skill_name in skill_names:
         found = False

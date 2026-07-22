@@ -342,3 +342,8 @@ def _cmd_done(args) -> None:
 def _cmd_health(args) -> None:
     from .state import health
     health(args)
+
+
+def _cmd_assist(args) -> None:
+    from .state import assist
+    assist(args)

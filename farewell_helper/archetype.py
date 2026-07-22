@@ -6,57 +6,68 @@ from . import config
 STACK_SKILL_MAP: dict[str, list[str]] = {
     "python": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-python", "farewell-devops", "farewell-api-design", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "flutter": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-flutter", "farewell-devops", "farewell-api-design", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "nodejs": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "nextjs": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "vue": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "nuxt": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "rust": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-rust", "farewell-devops", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "golang": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-devops", "farewell-api-design", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "docker": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-devops", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
     "c": [
         "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-prd", "farewell-audit",
         "farewell-c", "farewell-devops", "farewell-error-handling",
         "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
     ],
 }
 DEFAULT_STANDBY_SKILLS: list[str] = [
     "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+    "farewell-prd", "farewell-audit",
     "farewell-devops", "farewell-error-handling",
     "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
 ]
