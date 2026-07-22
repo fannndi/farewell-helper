@@ -1,48 +1,63 @@
 ---
 name: farewell-audit
-description: Use when studying a new codebase, learning from external project source, or understanding how something works before building on it — deep code forensics for comprehension and reuse.
+description: Use when studying a new codebase, learning from external project source, or understanding how something works before building on it — deep code forensics, per-file analysis.
 ---
 
-# Code Audit — Understand Any Project
+# Code Audit — Per-File Deep Analysis
 
-Study a codebase thoroughly: what it does, how it works, and what you can learn from it. Use before building something similar or integrating external code.
+Study a codebase file by file, layer by layer. Build a mental model of how everything connects.
 
-## Phase 1: Map The Surface
+## Phase 1: File Inventory
 
-Walk the directory tree. Note: entry points (`main.py`, `index.ts`, `main.dart`), config files, package manifests, build scripts, test directories. Answer: what language, what framework, what dependencies, what's the project's single purpose?
+Walk directory tree. List every source file with path, line count, and one-line purpose. Tag each: `[entry]` main/start, `[core]` logic, `[util]` helpers, `[config]`, `[test]`.
 
-## Phase 2: Trace The Core Flow
+## Phase 2: Per-File Deep Read
 
-Pick the primary user action (startup, main request, key feature). Trace it end-to-end: where does execution start, what functions are called, what data flows through, where does it end. Draw a mental call graph. Identify: request lifecycle, state machine, error paths, exit points.
+For each non-trivial file (>20 lines, core/util):
+- **Imports** — what does it depend on?
+- **Exports** — what does it provide?
+- **Main function** — entry point, algorithm sketch
+- **Data structures** — key classes, types, enums
+- **Side effects** — network, disk, DB, env vars
 
-## Phase 3: Extract Mechanisms
+## Phase 3: Cross-File Trace
 
-For each non-trivial component, answer:
-- **What does it do?** — one sentence.
-- **How does it do it?** — algorithm, data structure, pattern.
-- **Why was it done this way?** — what constraint or trade-off drove this choice.
-- **Could it be reused?** — is this a generic pattern or project-specific?
+Pick the primary flow. Trace it through files: entry → handler → service → repository → DB. Map the call chain.
 
-## Phase 4: Map Dependencies
+## Phase 4: Pattern Extraction
 
-What does this project depend on externally? (libraries, APIs, databases). What depends on it internally? (callers, consumers, inheritance chains). Where are the boundaries between modules?
+For each reusable mechanism, answer:
+- What problem does it solve?
+- How is it implemented? (algorithm, data structure)
+- Why was it done this way? (trade-offs)
+- Can this pattern be reused elsewhere?
 
-## Phase 5: Identify Reusable Pieces
-
-Extract patterns, algorithms, and architectural decisions that apply beyond this project. Document them in the project's `AUTO-GLOSSARY.md` or as ADRs. Ask: "If I were to build something similar, which pieces would I take and which would I redesign?"
-
-## Output
+## Phase 5: Report
 
 Generate `docs/audit-<project>.md`:
+
 ```markdown
 # Audit: <project>
 
-## Purpose
-## Architecture
-## Key Mechanisms (one per section: what, how, why, reusable?)
-## Dependencies
-## Entry Points
-## Data Flow
+## File Inventory
+| File | Lines | Role | Purpose |
+
+## Key Flows
+### Flow: <name>
+<file-1>:<function> → <file-2>:<function> → ...
+
 ## Patterns Worth Keeping
+### <Pattern Name>
+- What: ...
+- How: ...
+- Why: ...
+- Reusable as: ...
+
+## Architecture Notes
 ## What I'd Do Differently
 ```
+
+Rules:
+- One file at a time. Don't guess — read the file.
+- Flag anything interesting: unusual patterns, clever hacks, anti-patterns.
+- Boss can interrupt and ask "explain X deeper."
