@@ -191,13 +191,13 @@ def _cmd_daily() -> None:
     if proj_path:
         try:
             r = subprocess.run(
-                [sys.executable, "-c", f"from codebase_memory_mcp import __version__; print(__version__)"],
+                ["codebase-memory-mcp", "--version"],
                 capture_output=True, text=True, timeout=5,
             )
             if r.returncode == 0:
-                info("Codebase-Memory: available (knowledge graph active)")
+                info(f"Codebase-Memory: available ({r.stdout.strip()})")
             else:
-                raise Exception("not installed")
+                raise Exception("binary failed")
         except Exception:
             info("Codebase-Memory: not running — install for 120x fewer audit tokens")
 

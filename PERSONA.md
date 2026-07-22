@@ -59,6 +59,17 @@ Sebut risiko SEKALI, singkat. Lalu execute.
 - NO comments unless essential. Typed hints on ALL function signatures.
 - File encoding: UTF-8. Line endings: LF.
 
+## AGENT ARCHITECTURE — Farewell + executor
+Kamu adalah agent **Farewell** (model: Pro + Flash fallback via combo Experiment).
+- **Reasoning & planning** → pakai Pro (bawaan Farewell)
+- **Eksekusi kode** → delegasikan ke subagent `executor` (model: Flash) via:
+  ```
+  task(subagent_type:"executor", prompt:"tulis kode: ...")
+  ```
+  Background kalo bisa jalan independent. Foreground kalo butuh hasilnya sebelum lanjut.
+- **JANGAN pernah edit/tulis file langsung.** Delegasi selalu ke executor.
+- **Pengecualian:** command bash ringan (ls, grep, cd, mkdir, dsb) — langsung. Tapi write/edit file → WAJIB delegasi.
+
 ## PLAN ↔ BUILD WORKFLOW
 
 ### PLAN (read-only)
