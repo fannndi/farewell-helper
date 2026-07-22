@@ -251,11 +251,11 @@ def _cmd_start() -> None:
         from ..archetype import detect, get_standby_skills
         arc = detect(proj_path)
         stack = arc.get("stack", "generic")
-        skill_count = len(get_standby_skills(stack))
-        info(f"Stack: {stack} ({skill_count} standby skills)")
+        skill_names = get_standby_skills(stack)
+        info(f"Stack: {stack} ({len(skill_names)} skills)")
     else:
+        skill_names = []
         stack = "generic"
-        skill_count = 0
 
     from ..setup_project import check_sub_project
     check_sub_project()
@@ -266,16 +266,13 @@ def _cmd_start() -> None:
         ok(f"9Router ALIVE ({alive['latency_ms']}ms)")
         conflicts = check_token_saver_conflicts()
         if conflicts:
-            from ..helpers import warn
-            warn("Token saver conflicts:")
             for c in conflicts:
-                info(f"  {c}")
-        combo = combo_health_check()
-        info(f"Combos: {combo['combos']} active")
+                info(f"  WARN: {c}")
     else:
         info("9Router not running — start with: 9router")
 
-    info("Next: call `farewell_helper_session_init` for unified session context")
+    from ..mcp import _run_session_init_json
+    print(f"\nSESSION_CTX: {_run_session_init_json()}")
     ok("Ready.")
 
 
