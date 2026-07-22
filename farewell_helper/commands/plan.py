@@ -170,7 +170,7 @@ def done(args: argparse.Namespace) -> None:
     todo_file.write_text("# Tasks\n\n- [ ] (next task)\n", encoding="utf-8")
     info("  Fresh task list created")
 
-    session_start = fconfig.ROOT_DIR / "PROTOCOL.md"
+    session_start = fconfig.ROOT_DIR / "PERSONA.md"
     if session_start.exists():
         content = session_start.read_text(encoding="utf-8")
         pointer = f"\n## Last Handoff\n> {handoff_path}\n> **Task:** {task_summary[:80]}\n> **Files:** {len(task_files)}\n"
@@ -179,6 +179,6 @@ def done(args: argparse.Namespace) -> None:
         else:
             content += pointer
         session_start.write_text(content, encoding="utf-8")
-        info("  PROTOCOL.md updated with handoff pointer")
+        info("  PERSONA.md updated with handoff pointer")
 
     ok("Done. All tasks checkpointed, session continues. What's next Boss?")

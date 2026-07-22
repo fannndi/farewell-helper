@@ -79,12 +79,11 @@ class TestCLICommands:
 class TestPersonaFiles:
     def test_persona_files_exist(self):
         assert (ROOT / "PERSONA.md").exists()
-        assert (ROOT / "PROTOCOL.md").exists()
 
     def test_persona_has_no_contradiction(self):
-        protocol = (ROOT / "PROTOCOL.md").read_text(encoding="utf-8")
-        mode_lines = [l for l in protocol.split("\n") if "mode" in l.lower() and "BUILD" in l]
-        assert len(mode_lines) > 0, "PROTOCOL.md should mention BUILD mode"
+        persona = (ROOT / "PERSONA.md").read_text(encoding="utf-8")
+        mode_lines = [l for l in persona.split("\n") if "mode" in l.lower() and "BUILD" in l]
+        assert len(mode_lines) > 0, "PERSONA.md should mention BUILD mode"
 
 
 class TestSkillFiles:

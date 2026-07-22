@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 FAREWELL_DIR = ROOT_DIR / ".farewell"
-PERSONA_FILES = ["PERSONA.md", "PROTOCOL.md"]
+PERSONA_FILES = ["PERSONA.md"]
 
 
 def get_api_key() -> str:

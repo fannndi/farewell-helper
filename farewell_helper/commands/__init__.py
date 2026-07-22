@@ -199,7 +199,7 @@ def _cmd_verify() -> None:
 
 
 def _cmd_start() -> None:
-    from ..helpers import ok, fail
+    from ..helpers import ok, fail, info
     from .. import config
     from .project import get_active
 
@@ -220,9 +220,9 @@ def _cmd_start() -> None:
     if alive["alive"]:
         ok(f"9Router ALIVE ({alive['latency_ms']}ms)")
     else:
-        from ..helpers import info
-        info("9Router not running")
-    ok("Ready. Boss just needs to give the goal.")
+        info("9Router not running — start with: 9router")
+    info("Next: load all 4 skills then wait for Boss goal")
+    ok("Ready.")
 
 
 def _cmd_init() -> None:

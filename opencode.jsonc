@@ -57,8 +57,7 @@
     }
   },
   "instructions": [
-    "PERSONA.md",
-    "PROTOCOL.md"
+    "PERSONA.md"
   ],
   "agent": {
     "build": {
