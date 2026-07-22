@@ -200,6 +200,7 @@ def _cmd_start() -> None:
     from .project import get_active
 
     active = get_active()
+    code = active.get("code", "001")
     persona_paths = config.persona_files()
     missing = [f.name for f in persona_paths if not f.exists()]
     if missing:
@@ -207,6 +208,19 @@ def _cmd_start() -> None:
         return
     ok(f"All persona files present ({len(persona_paths)} files)")
     ok(f"Active project: {active['code']}-{active['name']}")
+
+    proj_path = config.project_path(code)
+    if proj_path:
+        from ..archetype import detect, get_standby_skills
+        arc = detect(proj_path)
+        stack = arc.get("stack", "generic")
+        skill_names = get_standby_skills(stack)
+        info(f"Stack: {stack} ({len(skill_names)} skills)")
+    else:
+        skill_names = [
+            "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+            "farewell-devops", "farewell-error-handling", "farewell-git",
+        ]
 
     from ..setup_project import check_sub_project
     check_sub_project()
@@ -225,8 +239,11 @@ def _cmd_start() -> None:
             info("Disable Ponytail + Caveman: 9Router dashboard > Token Saver")
     else:
         info("9Router not running — start with: 9router")
-    info("Next: load all skills then wait for Boss goal")
-    ok("Ready.")
+
+    info(f"Standby skills ({len(skill_names)}):")
+    for s in skill_names:
+        info(f"  {s}")
+    ok("Ready. Load standby skills, then wait for Boss goal.")
 
 
 def _cmd_init() -> None:

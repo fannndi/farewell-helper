@@ -1,6 +1,6 @@
 # Sub-Project Assistant
 
-Farewell Helper multi-repo mode. Manage multiple projects from one session with isolated memory, context, and state per repo.
+Farewell Helper multi-repo mode. Manage multiple projects from one session with isolated memory, context, state, and stack-specific standby skills per repo.
 
 ## Quick Start
 
@@ -18,6 +18,20 @@ farewell-helper handoff list
 # Switch back to farewell-helper root
 farewell-helper project switch 001
 ```
+
+## Standby Skills
+
+Each project's stack determines which skills are loaded. Running `farewell_helper start` outputs the standby skill list specific to the active project's detected stack. The AI loads only those skills — not all 15.
+
+| Stack | Skills loaded |
+|-------|--------------|
+| Python | persona, tdd, diagnosing-bugs, grilling, python, devops, api-design, error-handling, production-audit, git, workspace-audit |
+| Flutter | persona, tdd, diagnosing-bugs, grilling, flutter, devops, api-design, error-handling, production-audit, git, workspace-audit |
+| Node/React/Vue | persona, tdd, diagnosing-bugs, grilling, frontend, devops, api-design, error-handling, production-audit, git, workspace-audit |
+| Rust | persona, tdd, diagnosing-bugs, grilling, rust, devops, error-handling, production-audit, git, workspace-audit |
+| C | persona, tdd, diagnosing-bugs, grilling, c, devops, error-handling, production-audit, git, workspace-audit |
+
+Core 4 skills (persona, tdd, diagnosing-bugs, grilling) are always loaded. The rest depend on stack. Mapping lives in `farewell_helper/archetype.py:STACK_SKILL_MAP`.
 
 ## How It Works
 

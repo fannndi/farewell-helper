@@ -3,6 +3,69 @@
 from pathlib import Path
 from . import config
 
+STACK_SKILL_MAP: dict[str, list[str]] = {
+    "python": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-python", "farewell-devops", "farewell-api-design", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "flutter": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-flutter", "farewell-devops", "farewell-api-design", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "nodejs": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "nextjs": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "vue": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "nuxt": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-frontend", "farewell-devops", "farewell-api-design", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "rust": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-rust", "farewell-devops", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "golang": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-devops", "farewell-api-design", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "docker": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-devops", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+    "c": [
+        "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+        "farewell-c", "farewell-devops", "farewell-error-handling",
+        "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+    ],
+}
+DEFAULT_STANDBY_SKILLS: list[str] = [
+    "farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs", "farewell-grilling",
+    "farewell-devops", "farewell-error-handling",
+    "farewell-production-audit", "farewell-git", "farewell-workspace-audit",
+]
+
+
+def get_standby_skills(stack: str) -> list[str]:
+    """Return the skill subset relevant to a given stack."""
+    return STACK_SKILL_MAP.get(stack, DEFAULT_STANDBY_SKILLS)
+
 STACK_SIGNATURES = {
     "pyproject.toml": ("python", ["python", "pip", "uv"]),
     "requirements.txt": ("python", ["python", "pip"]),

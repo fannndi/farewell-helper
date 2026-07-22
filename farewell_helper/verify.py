@@ -50,10 +50,16 @@ def verify() -> dict:
                 if skill_name in content:
                     found = True
                     break
+        if not found:
+            from .archetype import STACK_SKILL_MAP
+            for stack_skills in STACK_SKILL_MAP.values():
+                if skill_name in stack_skills:
+                    found = True
+                    break
         results.append({
             "category": "skill",
             "status": "pass" if found else "warn",
-            "label": f"skill {skill_name}: {'REFERENCED' if found else 'not referenced in instructions'}",
+            "label": f"skill {skill_name}: {'REFERENCED' if found else 'not in standby map or persona'}",
         })
         if found:
             skill_mentioned += 1
