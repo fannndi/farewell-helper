@@ -35,7 +35,9 @@ def verify() -> dict:
         "label": f"OpenCode config: {'FOUND' if opencode_config_ok else 'MISSING'}",
     })
 
-    skill_names = ["farewell-persona", "farewell-engineering", "farewell-flows", "farewell-9router"]
+    skill_names = ["farewell-persona", "farewell-tdd", "farewell-diagnosing-bugs",
+                   "farewell-code-review", "farewell-codebase-design",
+                   "farewell-grill-with-docs", "farewell-grilling"]
     skill_mentioned = 0
     for skill_name in skill_names:
         found = False

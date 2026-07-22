@@ -225,7 +225,7 @@ def _cmd_start() -> None:
             info("Disable Ponytail + Caveman: 9Router dashboard > Token Saver")
     else:
         info("9Router not running — start with: 9router")
-    info("Next: load all 4 skills then wait for Boss goal")
+    info("Next: load all skills then wait for Boss goal")
     ok("Ready.")
 
 
