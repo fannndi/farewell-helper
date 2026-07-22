@@ -25,7 +25,33 @@ TOOLS = [
         "description": "Health check + sync combo + resolve config template",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "farewell_helper_skills",
+        "description": "Return standby skill names for the active project as structured JSON — use this to know which skills to load via the skill tool.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
 ]
+
+
+def _run_skills_json() -> str:
+    from .commands.project import get_active
+    from .archetype import detect, get_standby_skills
+    active = get_active()
+    code = active.get("code", "001")
+    name = active.get("name", "farewell-helper")
+    proj_path = config.project_path(code)
+    if proj_path:
+        arc = detect(proj_path)
+        stack = arc.get("stack", "generic")
+    else:
+        stack = "generic"
+    skill_names = get_standby_skills(stack)
+    return json.dumps({
+        "project": f"{code}-{name}",
+        "stack": stack,
+        "count": len(skill_names),
+        "skills": skill_names,
+    })
 
 
 def _capture(fn: Callable[[], None]) -> str:
@@ -56,6 +82,8 @@ def _run_tool(name: str) -> str:
     if name == "farewell_helper_daily":
         from .commands import _cmd_daily
         return _capture(_cmd_daily)
+    if name == "farewell_helper_skills":
+        return _run_skills_json()
     return json.dumps({"error": f"Unknown tool: {name}"})
 
 

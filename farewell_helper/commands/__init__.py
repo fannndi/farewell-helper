@@ -111,6 +111,10 @@ def main() -> None:
     p.add_argument("--audit", action="store_true", help="Refresh workspace audit")
     p.set_defaults(func=lambda args: _cmd_assist(args))
 
+    # skills — JSON output of standby skills for the active project
+    p = sub.add_parser("skills", help="List standby skills as JSON for the active project")
+    p.set_defaults(func=lambda args: _cmd_skills())
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -357,3 +361,9 @@ def _cmd_health(args) -> None:
 def _cmd_assist(args) -> None:
     from .state import assist
     assist(args)
+
+
+def _cmd_skills() -> None:
+    """Output standby skill names as JSON for the active project."""
+    from ..mcp import _run_skills_json
+    print(_run_skills_json())
