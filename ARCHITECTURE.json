@@ -1,0 +1,259 @@
+{
+  "project": {
+    "name": "farewell-helper",
+    "version": "5.0.0",
+    "description": "OpenCode agent + 9Router model gateway + skills + persona. Multi-repo session management.",
+    "principles": ["KISS", "YAGNI", "Single source of truth", "Config = data, not hardcode", "Enforcement via mechanism, not text"],
+    "pillars": {
+      "opencode": {
+        "role": "Agent runtime",
+        "config": "opencode.jsonc (generated from opencode.template.jsonc + farewell.combos.jsonc)",
+        "agents": {
+          "build": { "permission": "edit:allow, bash:allow", "model_combo": "${Execution_Paid}", "mode": "primary" },
+          "plan": { "permission": "edit:deny, bash:deny (except grep/find/ls/cat/head/tail/dir/echo)", "model_combo": "${Pro_Plan}", "mode": "primary" }
+        },
+        "instructions": ["PERSONA.md", "PROTOCOL.md"],
+        "mcp_server": { "command": "py -m farewell_helper.mcp --stdio", "tools_count": 4 },
+        "slash_commands": ["/daily", "/sync", "/verify", "/start", "/health", "/pre-commit"]
+      },
+      "ninerouter": {
+        "role": "Model gateway",
+        "endpoint": "http://localhost:20128",
+        "auth": "NINEROUTER_API_KEY env var",
+        "api_calls": ["chat/completions", "models", "health"],
+        "combos_file": "farewell.combos.jsonc",
+        "combo_tiers": {
+          "FREE_Model": { "strategy": "round-robin", "use_case": "Research & quick queries" },
+          "Pro_Plan": { "strategy": "fallback", "use_case": "Deep analysis & spec drafting" },
+          "Execution_Paid": { "strategy": "fallback", "use_case": "Complex implementation & bug fixing" },
+          "Execution_Free": { "strategy": "round-robin", "use_case": "Light execution" }
+        }
+      },
+      "skills": {
+        "role": "Engineering method & domain knowledge",
+        "path": "skills/",
+        "trigger": "Frontmatter description with 'Use when...' clause",
+        "list": [
+          { "name": "farewell-persona", "description": "Use when starting a new session, when identity/persona context is missing or unclear" },
+          { "name": "farewell-engineering", "description": "Use when implementing new code, fixing bugs, reviewing code, or designing architecture" },
+          { "name": "farewell-flows", "description": "Use when managing work modes (PLAN/BUILD), generating handoffs, using memory system, or checking DoD" },
+          { "name": "farewell-9router", "description": "Use when interacting with 9Router model gateway, configuring model combos, or troubleshooting" }
+        ]
+      },
+      "farewell_persona": {
+        "role": "AI identity + Boss identity + Working protocol",
+        "files": {
+          "PERSONA.md": "Who AI is (senior assistant) + who Boss is (owner, reviewer) + core values + communication style + YAGNI ladder",
+          "PROTOCOL.md": "Boot sequence + PLAN/BUILD mode rules + precision standard + implementation rules + memory system + DoD"
+        },
+        "memory_system": {
+          "MEMORY.md": { "max_chars": 2200, "per_project": true },
+          "USER.md": { "max_chars": 1375, "per_project": true },
+          "AUTO-GLOSSARY.md": "Auto-extracted domain terms per project"
+        }
+      }
+    }
+  },
+
+  "codebase": {
+    "total_files": 39,
+    "total_loc_approx": 3043,
+    "python_package": {
+      "root": "farewell_helper/",
+      "entry_point": "farewell_helper.commands:main (via pyproject.toml)",
+      "modules": {
+        "config.py": {
+          "purpose": "Global paths (ROOT_DIR, FAREWELL_DIR, MEMORY_DIR, CONTEXT_DIR) + env access (NINEROUTER_API_KEY, FAREWELL_ROUTER_URL) + persona file list",
+          "exports": ["ROOT_DIR", "FAREWELL_DIR", "MEMORY_DIR", "CONTEXT_DIR", "get_api_key()", "router_base_url()", "PERSONA_FILES", "persona_files()"],
+          "dependencies": ["stdlib: os, pathlib"],
+          "loc": 27
+        },
+        "helpers.py": {
+          "purpose": "Colored CLI output formatting (ok, fail, warn, info, skip, c)",
+          "exports": ["c()", "ok()", "fail()", "warn()", "info()", "skip()"],
+          "dependencies": ["stdlib: os, platform, sys"],
+          "loc": 43
+        },
+        "router_client.py": {
+          "purpose": "Simplified 9Router HTTP client — chat, models list, health ping only",
+          "exports": ["chat()", "models()", "ping()"],
+          "dependencies": ["config.py", "stdlib: json, urllib.request, urllib.error"],
+          "loc": 44
+        },
+        "sync.py": {
+          "purpose": "Read farewell.combos.jsonc -> resolve ${PLACEHOLDER}s in opencode.template.jsonc -> write opencode.jsonc",
+          "exports": ["render()"],
+          "dependencies": ["config.py", "stdlib: json, re, pathlib"],
+          "loc": 37
+        },
+        "mcp.py": {
+          "purpose": "MCP JSON-RPC 2.0 server over stdio — 4 tools (verify, sync, start, daily)",
+          "exports": ["main()", "serve()"],
+          "dependencies": ["config.py", "stdlib: json, sys, subprocess"],
+          "loc": 118
+        },
+        "verify.py": {
+          "purpose": "Verify persona files exist + opencode config exists + skills referenced + 9Router alive",
+          "exports": ["verify()"],
+          "dependencies": ["config.py", "router_client.py", "stdlib: pathlib"],
+          "loc": 80
+        },
+        "archetype.py": {
+          "purpose": "Auto-detect project stack (python, nodejs, rust, etc.) from file markers, map to relevant skills",
+          "exports": ["detect()", "generate_archetype_report()", "save_archetype()", "load_archetype()"],
+          "dependencies": ["config.py", "stdlib: pathlib, json"],
+          "loc": 153
+        },
+        "context_manager.py": {
+          "purpose": "Per-project AUTO-GLOSSARY.md management — add terms, init from archetype, list ADRs",
+          "exports": ["context_content()", "save_context()", "add_glossary_term()", "init_context_from_archetype()", "list_adrs()"],
+          "dependencies": ["config.py", "stdlib: datetime, pathlib"],
+          "loc": 76
+        },
+        "cache_monitor.py": {
+          "purpose": "Track token usage, cache hits, costs per model/session. Context budget alerts.",
+          "exports": ["get_daily_stats()", "get_session_stats()", "get_model_breakdown()", "get_session_context_budget()", "estimate_cost()", "format_stats()", "format_model_breakdown()"],
+          "dependencies": ["config.py", "stdlib: pathlib, datetime, collections, json"],
+          "loc": 191
+        },
+        "pre_commit.py": {
+          "purpose": "Quality gate: run pytest + scan for TODO/FIXME comments",
+          "exports": ["check()"],
+          "dependencies": ["config.py", "stdlib: re, subprocess, sys, pathlib"],
+          "loc": 36
+        },
+        "setup_project.py": {
+          "purpose": "Register external git repos as sub-projects — inject .farewell/, detect archetype, track metadata",
+          "exports": ["analyze()", "is_outside_workspace()", "detect_sub_project()", "update_metadata()", "get_metadata()", "get_effective_skills()"],
+          "dependencies": ["config.py", "archetype.py", "context_manager.py", "stdlib: pathlib, json, datetime, shutil, typing"],
+          "loc": 176
+        },
+        "task_planner.py": {
+          "purpose": "Decompose high-level goals into actionable tickets with TDD workflow templates",
+          "exports": ["classify_goal()", "decompose()", "format_tickets()", "save_plan()"],
+          "dependencies": ["config.py", "archetype.py", "stdlib: pathlib"],
+          "loc": 167
+        },
+        "core/io.py": {
+          "purpose": "Atomic JSON read/write with temp file swap",
+          "exports": ["read_json()", "write_json()"],
+          "dependencies": ["stdlib: json, pathlib, typing"],
+          "loc": 25
+        },
+        "core/memory.py": {
+          "purpose": "Per-project MEMORY.md + USER.md with size limits",
+          "exports": ["memory_content()", "save_memory()", "user_content()", "save_user()", "save_session()", "load_session()", "memory_usage_pct()", "user_usage_pct()"],
+          "dependencies": ["config.py", "core/io.py", "stdlib: pathlib, datetime"],
+          "loc": 68
+        },
+        "core/session.py": {
+          "purpose": "Session lifecycle: start, end, lineage tracking, handoff generation",
+          "exports": ["start_session()", "end_session()", "recent_sessions()", "last_session()", "generate_handoff()", "last_handoff()"],
+          "dependencies": ["config.py", "core/io.py", "stdlib: datetime, pathlib"],
+          "loc": 79
+        },
+        "core/learning.py": {
+          "purpose": "Auto-extract patterns and glossary terms from handoff text",
+          "exports": ["detect_patterns()", "suggest_glossary()", "auto_extract()", "compile_learnings()"],
+          "dependencies": ["config.py", "stdlib: pathlib, collections"],
+          "loc": 133
+        },
+        "commands/__init__.py": {
+          "purpose": "Argparse CLI entry point — 17 subcommands delegating to module files",
+          "exports": ["main()"],
+          "dependencies": ["All command modules", "sync.py", "verify.py", "router_client.py", "pre_commit.py", "stdlib: argparse"],
+          "loc": 301
+        },
+        "commands/state.py": {
+          "purpose": "Status, verify, init, health commands",
+          "exports": ["status()", "verify()", "health()"],
+          "dependencies": ["config.py", "router_client.py", "verify.py", "project.py", "core/memory.py", "core/session.py", "context_manager.py", "stdlib: re, subprocess, sys"],
+          "loc": 102
+        },
+        "commands/plan.py": {
+          "purpose": "TODO.md CRUD (create/add/show/check/status/export) + done auto-compress (commit+push+handoff)",
+          "exports": ["todo()", "done()"],
+          "dependencies": ["config.py", "project.py", "core/memory.py", "core/session.py", "pre_commit.py", "stdlib: pathlib, datetime, subprocess, re"],
+          "loc": 194
+        },
+        "commands/project.py": {
+          "purpose": "Project registry management: list, switch, unregister, status, set_active, get_active",
+          "exports": ["cmd_project()", "get_active()", "set_active()"],
+          "dependencies": ["config.py", "archetype.py", "setup_project.py", "stdlib: argparse, json, shutil, pathlib"],
+          "loc": 164
+        },
+        "commands/memory.py": {
+          "purpose": "Memory show/edit/save + session list",
+          "exports": ["cmd_memory()", "cmd_sessions()"],
+          "dependencies": ["core/memory.py", "core/session.py", "stdlib: argparse, os, subprocess, tempfile, pathlib"],
+          "loc": 90
+        },
+        "commands/handoff_cmd.py": {
+          "purpose": "Handoff show/save/list/search/export",
+          "exports": ["handoff()"],
+          "dependencies": ["config.py", "project.py", "core/session.py", "core/memory.py", "stdlib: pathlib, datetime"],
+          "loc": 81
+        },
+        "commands/notes_cmd.py": {
+          "purpose": "Auto-glossary show/add",
+          "exports": ["notes()"],
+          "dependencies": ["context_manager.py", "stdlib: none explicit"],
+          "loc": 27
+        }
+      }
+    },
+    "config_files": {
+      "PERSONA.md": { "loc": 89, "type": "persona", "purpose": "AI identity + Boss identity + values + YAGNI + communication" },
+      "PROTOCOL.md": { "loc": 123, "type": "persona", "purpose": "Boot sequence + work modes + precision standard + rules + memory sys" },
+      "farewell.combos.jsonc": { "loc": 21, "type": "config", "purpose": "Source of truth for 9Router combo model strings" },
+      "opencode.template.jsonc": { "loc": 156, "type": "config", "purpose": "OpenCode config template with ${PLACEHOLDER}s resolved by sync.py" },
+      "farewell.json": { "loc": 28, "type": "config", "purpose": "Project metadata (name, version, skills, requires)" },
+      "pyproject.toml": { "loc": 16, "type": "config", "purpose": "Python package build config" },
+      "README.md": { "loc": 70, "type": "docs", "purpose": "Project documentation" }
+    }
+  },
+
+  "commands": {
+    "total": 17,
+    "list": [
+      { "name": "sync", "description": "Sync 9Router combos + resolve opencode config template" },
+      { "name": "daily", "description": "Full health check: verify persona -> sync combos -> ping 9Router" },
+      { "name": "status", "description": "Show current state (9Router, project, persona files)" },
+      { "name": "verify", "description": "Verify persona + skill injection + 9Router connectivity" },
+      { "name": "start", "description": "Validate persona files + show active project + ping 9Router" },
+      { "name": "init", "description": "Bootstrap: verify + sync + health check" },
+      { "name": "memory", "description": "View/edit MEMORY.md and USER.md per project" },
+      { "name": "sessions", "description": "Session history per project" },
+      { "name": "setup-project", "description": "Register external git repo as sub-project" },
+      { "name": "notes", "description": "Manage auto-extracted glossary terms" },
+      { "name": "handoff", "description": "Show/save/list/search/export session handoffs" },
+      { "name": "project", "description": "List/switch/unregister/status project registry" },
+      { "name": "pre-commit", "description": "Quality gate: run tests + check TODO/FIXME" },
+      { "name": "todo", "description": "TODO.md create/add/show/check/status/export" },
+      { "name": "done", "description": "Auto-compress: pre-commit -> git add/commit -> git push -> handoff" },
+      { "name": "health", "description": "Full project health report" }
+    ]
+  },
+
+  "data_flow": {
+    "session_start": ["PERSONA.md + PROTOCOL.md loaded as OpenCode instructions", "verify persona files exist", "ping 9Router health"],
+    "daily_check": ["verify persona", "sync combos (farewell.combos.jsonc -> opencode.template.jsonc -> opencode.jsonc)", "ping 9Router"],
+    "handoff_cycle": ["done command: pre-commit -> git add/commit -> git push -> generate_handoff()", "handoff saved to .farewell/memory/{code}-{name}/handoff-*.md", "next session: last_handoff() resumes from last handoff"],
+    "multi_repo": ["setup-project <path> -> detect archetype -> inject .farewell/ -> register in projects.txt", "project switch <code> -> switch active project context", "isolated MEMORY.md + USER.md + AUTO-GLOSSARY.md per project"],
+    "template_resolution": ["farewell.combos.jsonc (source of truth)", "-> sync.py _read_combos()", "-> render() replaces ${PLACEHOLDER}s in opencode.template.jsonc", "-> writes opencode.jsonc"]
+  },
+
+  "agent_onboarding": {
+    "files_to_read_first": ["PERSONA.md", "PROTOCOL.md"],
+    "config_to_understand": ["farewell.combos.jsonc", "opencode.template.jsonc", "farewell.json"],
+    "entry_point": "pyproject.toml -> farewell_helper/commands/__init__.py -> main()",
+    "key_modules": ["router_client.py (9Router communication)", "sync.py (template + combo resolution)", "mcp.py (MCP server)", "commands/ (CLI)"],
+    "test_strategy": "No tests yet — each CLI command needs a smoke test. pytest in root, test files in tests/.",
+    "common_tasks": [
+      "Add a new CLI command: add parser in commands/__init__.py + implement in commands/",
+      "Add a new MCP tool: add to TOOLS list + _CMD_MAP in mcp.py",
+      "Add a new 9Router API call: add function in router_client.py",
+      "Add a new combo tier: edit farewell.combos.jsonc + add ${PLACEHOLDER} in opencode.template.jsonc"
+    ]
+  }
+}

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farewell Helper v5 — Architecture Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }
+  a { color: #58a6ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .header { max-width: 1200px; margin: 0 auto 30px; padding: 20px; background: linear-gradient(135deg, #161b22 0%, #1c2128 100%); border-radius: 12px; border: 1px solid #30363d; }
+  .header h1 { font-size: 24px; color: #f0f6fc; margin-bottom: 6px; }
+  .header h1 span { color: #3fb950; }
+  .header .sub { color: #8b949e; font-size: 14px; }
+  .header .meta { margin-top: 10px; display: flex; gap: 20px; font-size: 13px; }
+  .header .meta span { color: #8b949e; }
+  .header .meta strong { color: #c9d1d9; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .bg-green { background: #1b3a24; color: #3fb950; }
+  .bg-blue { background: #1a304a; color: #58a6ff; }
+  .bg-yellow { background: #3a2e1a; color: #d29922; }
+  .bg-purple { background: #2a1a3a; color: #bc8cff; }
+  .bg-red { background: #3a1a1a; color: #f85149; }
+  .bg-cyan { background: #1a3a3a; color: #39d2c0; }
+
+  .grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; transition: border-color 0.2s; }
+  .card:hover { border-color: #58a6ff; }
+  .card.full { grid-column: 1 / -1; }
+  .card-header { padding: 14px 18px; border-bottom: 1px solid #21262d; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 15px; color: #f0f6fc; font-weight: 600; }
+  .card-body { padding: 14px 18px; font-size: 13px; line-height: 1.6; }
+
+  .pillar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .pillar-grid { grid-template-columns: 1fr; } }
+  .pillar { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; }
+  .pillar h3 { font-size: 14px; margin-bottom: 8px; }
+  .pillar .role { font-size: 12px; color: #8b949e; margin-bottom: 8px; }
+  .pillar ul { list-style: none; }
+  .pillar ul li { padding: 3px 0; font-size: 12px; color: #c9d1d9; }
+  .pillar ul li::before { content: '▸ '; color: #58a6ff; }
+
+  .cmd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  @media (max-width: 600px) { .cmd-grid { grid-template-columns: 1fr; } }
+  .cmd-item { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px; font-size: 12px; }
+  .cmd-item .cmd-name { color: #58a6ff; font-weight: 600; }
+  .cmd-item .cmd-desc { color: #8b949e; font-size: 11px; margin-top: 2px; }
+
+  .module-list { display: flex; flex-direction: column; gap: 4px; }
+  .module-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #21262d; font-size: 12px; }
+  .module-row:last-child { border-bottom: none; }
+  .module-row .m-name { color: #58a6ff; font-weight: 600; min-width: 160px; }
+  .module-row .m-loc { color: #8b949e; min-width: 40px; text-align: right; }
+  .module-row .m-desc { color: #c9d1d9; flex: 1; padding-left: 12px; }
+  .module-row .m-dep { color: #8b949e; font-size: 11px; padding-left: 12px; }
+
+  .flow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .flow-grid { grid-template-columns: 1fr; } }
+  .flow-card { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; }
+  .flow-card h3 { font-size: 13px; color: #f0f6fc; margin-bottom: 6px; }
+  .flow-card ol, .flow-card ul { padding-left: 16px; font-size: 12px; color: #c9d1d9; }
+  .flow-card ol li, .flow-card ul li { padding: 2px 0; }
+
+  .file-tree { font-family: monospace; font-size: 12px; line-height: 1.7; color: #c9d1d9; }
+  .file-tree .dir { color: #58a6ff; }
+  .file-tree .file { color: #c9d1d9; }
+  .file-tree .highlight { background: #1a304a; border-radius: 3px; padding: 0 4px; }
+  .file-tree .depth-0 { padding-left: 0; }
+  .file-tree .depth-1 { padding-left: 20px; }
+  .file-tree .depth-2 { padding-left: 40px; }
+  .file-tree .depth-3 { padding-left: 60px; }
+  .file-tree .depth-4 { padding-left: 80px; }
+
+  .toggle { cursor: pointer; user-select: none; }
+  .toggle::before { content: '▼ '; color: #58a6ff; font-size: 10px; }
+  .toggle.collapsed::before { content: '▶ '; }
+  .collapsible { overflow: hidden; transition: max-height 0.3s; }
+  .collapsible.collapsed { max-height: 0 !important; }
+
+  .details-row { display: flex; gap: 20px; flex-wrap: wrap; padding: 4px 0; }
+  .details-row dt { color: #8b949e; font-size: 11px; min-width: 100px; }
+  .details-row dd { color: #c9d1d9; font-size: 12px; }
+
+  .principle-list { display: flex; gap: 8px; flex-wrap: wrap; }
+  .principle-list span { background: #1a304a; color: #58a6ff; padding: 4px 12px; border-radius: 14px; font-size: 11px; border: 1px solid #30363d; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1117; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>farewell-helper <span>v5.0.0</span></h1>
+  <div class="sub">OpenCode (agent) + 9Router (model) + Skills (method) + Farewell (persona) — 4 pillars, one session.</div>
+  <div class="meta">
+    <span><strong>3,043</strong> LOC</span>
+    <span><strong>39</strong> files</span>
+    <span><strong>17</strong> CLI commands</span>
+    <span><strong>4</strong> MCP tools</span>
+    <span><strong>4</strong> skill files</span>
+    <span><strong>2</strong> persona files</span>
+  </div>
+  <div class="principle-list" style="margin-top: 10px;">
+    <span>KISS</span><span>YAGNI</span><span>Single Source of Truth</span><span>Config = Data</span><span>Enforcement via Mechanism</span>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- 4 PILLARS -->
+  <div class="card full">
+    <div class="card-header"><h2>🏛️ 4 Pillars</h2></div>
+    <div class="card-body">
+      <div class="pillar-grid">
+        <div class="pillar" style="border-left: 3px solid #3fb950;">
+          <h3 style="color:#3fb950;">OpenCode</h3>
+          <div class="role">Agent Runtime</div>
+          <ul>
+            <li>2 agents: <strong>build</strong> (full access) + <strong>plan</strong> (read-only)</li>
+            <li>PLAN enforced via <code>permission.edit: deny</code> + <code>permission.bash: deny</code></li>
+            <li>Instructions: <code>PERSONA.md</code> + <code>PROTOCOL.md</code></li>
+            <li>MCP server: <code>py -m farewell_helper.mcp --stdio</code> (4 tools)</li>
+            <li>6 slash commands: /daily /sync /verify /start /health /pre-commit</li>
+          </ul>
+        </div>
+        <div class="pillar" style="border-left: 3px solid #58a6ff;">
+          <h3 style="color:#58a6ff;">9Router</h3>
+          <div class="role">Model Gateway at :20128</div>
+          <ul>
+            <li>Auth via <code>NINEROUTER_API_KEY</code> env var</li>
+            <li>4 combo tiers: FREE_Model, Pro_Plan, Execution_Paid, Execution_Free</li>
+            <li>Simple HTTP client: <code>chat()</code>, <code>models()</code>, <code>ping()</code></li>
+            <li>Source of truth: <code>farewell.combos.jsonc</code> → resolved by <code>sync.py</code></li>
+            <li>Fallback strategy for cache affinity; Round-robin for diversity</li>
+          </ul>
+        </div>
+        <div class="pillar" style="border-left: 3px solid #bc8cff;">
+          <h3 style="color:#bc8cff;">Skills</h3>
+          <div class="role">Engineering Method + Domain Knowledge</div>
+          <ul>
+            <li>4 skill files under <code>skills/</code></li>
+            <li>Trigger: frontmatter <code>description</code> with "Use when..." clause</li>
+            <li><strong>farewell-persona</strong>: identity, YAGNI, push-back</li>
+            <li><strong>farewell-engineering</strong>: TDD, bug fixing, code review</li>
+            <li><strong>farewell-flows</strong>: PLAN/BUILD, handoff, memory, DoD</li>
+            <li><strong>farewell-9router</strong>: combo strategies, model profiles</li>
+          </ul>
+        </div>
+        <div class="pillar" style="border-left: 3px solid #d29922;">
+          <h3 style="color:#d29922;">Farewell Persona</h3>
+          <div class="role">AI Identity + Boss Identity + Protocol</div>
+          <ul>
+            <li><strong>PERSONA.md</strong>: Who AI is, who Boss is, values, YAGNI</li>
+            <li><strong>PROTOCOL.md</strong>: Work modes, precision standard, rules, DoD</li>
+            <li>Memory: MEMORY.md (2.2K chars) + USER.md (1.4K chars) per project</li>
+            <li>Auto-glossary: AUTO-GLOSSARY.md per project</li>
+            <li>Session lineage via lineage.json per project</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILE TREE -->
+  <div class="card full">
+    <div class="card-header">
+      <h2>📁 File Tree</h2>
+      <span class="badge bg-green">39 files</span>
+    </div>
+    <div class="card-body file-tree">
+      <div class="depth-0 dir">farewell-helper/</div>
+      <div class="depth-1 file">├─ PERSONA.md</div>
+      <div class="depth-1 file">├─ PROTOCOL.md</div>
+      <div class="depth-1 file">├─ farewell.combos.jsonc</div>
+      <div class="depth-1 file">├─ opencode.template.jsonc</div>
+      <div class="depth-1 file">├─ farewell.json</div>
+      <div class="depth-1 file">├─ pyproject.toml</div>
+      <div class="depth-1 file">├─ README.md</div>
+      <div class="depth-1 file">├─ .gitignore</div>
+      <div class="depth-1 file">├─ .env.example</div>
+      <div class="depth-1 dir">├─ skills/</div>
+      <div class="depth-2 dir">│  ├─ farewell-persona/SKILL.md</div>
+      <div class="depth-2 dir">│  ├─ farewell-engineering/SKILL.md</div>
+      <div class="depth-2 dir">│  ├─ farewell-flows/SKILL.md</div>
+      <div class="depth-2 dir">│  └─ farewell-9router/SKILL.md</div>
+      <div class="depth-1 dir">├─ farewell_helper/</div>
+      <div class="depth-2 file">│  ├─ __init__.py</div>
+      <div class="depth-2 file">│  ├─ __main__.py</div>
+      <div class="depth-2 file highlight">│  ├─ config.py</div>
+      <div class="depth-2 file highlight">│  ├─ helpers.py</div>
+      <div class="depth-2 file highlight">│  ├─ router_client.py</div>
+      <div class="depth-2 file highlight">│  ├─ sync.py</div>
+      <div class="depth-2 file highlight">│  ├─ mcp.py</div>
+      <div class="depth-2 file highlight">│  ├─ verify.py</div>
+      <div class="depth-2 file">│  ├─ archetype.py</div>
+      <div class="depth-2 file">│  ├─ context_manager.py</div>
+      <div class="depth-2 file">│  ├─ cache_monitor.py</div>
+      <div class="depth-2 file">│  ├─ pre_commit.py</div>
+      <div class="depth-2 file">│  ├─ setup_project.py</div>
+      <div class="depth-2 file">│  └─ task_planner.py</div>
+      <div class="depth-2 dir">│  ├─ core/</div>
+      <div class="depth-3 file">│  │  ├─ io.py</div>
+      <div class="depth-3 file">│  │  ├─ memory.py</div>
+      <div class="depth-3 file">│  │  ├─ session.py</div>
+      <div class="depth-3 file">│  │  └─ learning.py</div>
+      <div class="depth-2 dir">│  └─ commands/</div>
+      <div class="depth-3 file">│     ├─ __init__.py</div>
+      <div class="depth-3 file">│     ├─ state.py</div>
+      <div class="depth-3 file">│     ├─ plan.py</div>
+      <div class="depth-3 file">│     ├─ project.py</div>
+      <div class="depth-3 file">│     ├─ memory.py</div>
+      <div class="depth-3 file">│     ├─ handoff_cmd.py</div>
+      <div class="depth-3 file">│     └─ notes_cmd.py</div>
+      <div class="depth-1 dir">├─ .opencode/</div>
+      <div class="depth-1 dir">├─ .farewell/ (gitignored, runtime data)</div>
+      <div class="depth-2 file">│  ├─ active.json</div>
+      <div class="depth-2 file">│  ├─ projects.txt</div>
+      <div class="depth-2 file">│  ├─ metadata.json</div>
+      <div class="depth-2 file">│  ├─ memory/{code}-{name}/MEMORY.md, USER.md, handoff-*.md</div>
+      <div class="depth-2 file">│  ├─ context/{code}-{name}/AUTO-GLOSSARY.md</div>
+      <div class="depth-2 file">│  └─ cache-monitor/{code}-{name}-*.json</div>
+      <div class="depth-0" style="margin-top: 8px; color: #8b949e;">Highlighted = core infrastructure modules</div>
+    </div>
+  </div>
+
+  <!-- CLI COMMANDS -->
+  <div class="card full">
+    <div class="card-header">
+      <h2>⌨️ CLI Commands (17)</h2>
+      <span class="badge bg-blue">entry: farewell_helper.commands:main</span>
+    </div>
+    <div class="card-body">
+      <div class="cmd-grid">
+        <div class="cmd-item"><div class="cmd-name">sync</div><div class="cmd-desc">Sync combos → resolve config template</div></div>
+        <div class="cmd-item"><div class="cmd-name">daily</div><div class="cmd-desc">Verify → sync → health check</div></div>
+        <div class="cmd-item"><div class="cmd-name">status</div><div class="cmd-desc">Show current state</div></div>
+        <div class="cmd-item"><div class="cmd-name">verify</div><div class="cmd-desc">Verify persona + skill + 9Router</div></div>
+        <div class="cmd-item"><div class="cmd-name">start</div><div class="cmd-desc">Validate persona + project + 9Router</div></div>
+        <div class="cmd-item"><div class="cmd-name">init</div><div class="cmd-desc">Bootstrap: verify + sync + health</div></div>
+        <div class="cmd-item"><div class="cmd-name">memory</div><div class="cmd-desc">View/edit MEMORY.md &amp; USER.md</div></div>
+        <div class="cmd-item"><div class="cmd-name">sessions</div><div class="cmd-desc">Session history per project</div></div>
+        <div class="cmd-item"><div class="cmd-name">setup-project</div><div class="cmd-desc">Register external repo</div></div>
+        <div class="cmd-item"><div class="cmd-name">notes</div><div class="cmd-desc">Manage glossary terms</div></div>
+        <div class="cmd-item"><div class="cmd-name">handoff</div><div class="cmd-desc">Show/save/list/search/export</div></div>
+        <div class="cmd-item"><div class="cmd-name">project</div><div class="cmd-desc">List/switch/unregister/status</div></div>
+        <div class="cmd-item"><div class="cmd-name">pre-commit</div><div class="cmd-desc">Quality gate: tests + TODO check</div></div>
+        <div class="cmd-item"><div class="cmd-name">todo</div><div class="cmd-desc">TODO.md CRUD</div></div>
+        <div class="cmd-item"><div class="cmd-name">done</div><div class="cmd-desc">Auto-compress: commit → push → handoff</div></div>
+        <div class="cmd-item"><div class="cmd-name">health</div><div class="cmd-desc">Full health report</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE DEPENDENCIES -->
+  <div class="card full">
+    <div class="card-header">
+      <h2>🧩 Module Dependency Map (25 Python modules)</h2>
+      <span class="badge bg-purple">stdlib only — zero external deps</span>
+    </div>
+    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+      <div class="module-list">
+        <div class="module-row"><span class="m-name">config.py</span><span class="m-loc">27</span><span class="m-desc">Global paths + env access + persona list</span><span class="m-dep">stdlib</span></div>
+        <div class="module-row"><span class="m-name">helpers.py</span><span class="m-loc">43</span><span class="m-desc">Colored CLI output (ok/fail/warn/info/c)</span><span class="m-dep">stdlib</span></div>
+        <div class="module-row"><span class="m-name">router_client.py</span><span class="m-loc">44</span><span class="m-desc">9Router HTTP: chat, models, ping</span><span class="m-dep">config.py</span></div>
+        <div class="module-row"><span class="m-name">sync.py</span><span class="m-loc">37</span><span class="m-desc">Read combos.jsonc → resolve template</span><span class="m-dep">config.py</span></div>
+        <div class="module-row"><span class="m-name">mcp.py</span><span class="m-loc">118</span><span class="m-desc">MCP server: 4 tools over stdio</span><span class="m-dep">config.py</span></div>
+        <div class="module-row"><span class="m-name">verify.py</span><span class="m-loc">80</span><span class="m-desc">Persona + config + skills + 9Router verify</span><span class="m-dep">config.py, router_client.py</span></div>
+        <div class="module-row"><span class="m-name">archetype.py</span><span class="m-loc">153</span><span class="m-desc">Stack detection from file markers</span><span class="m-dep">config.py</span></div>
+        <div class="module-row"><span class="m-name">context_manager.py</span><span class="m-loc">76</span><span class="m-desc">AUTO-GLOSSARY.md per project</span><span class="m-dep">config.py</span></div>
+        <div class="module-row"><span class="m-name">cache_monitor.py</span><span class="m-loc">191</span><span class="m-desc">Token tracking + context budget</span><span class="m-dep">config.py</span></div>
+        <div class="module-row"><span class="m-name">pre_commit.py</span><span class="m-loc">36</span><span class="m-desc">pytest + TODO/FIXME scanner</span><span class="m-dep">config.py</span></div>
+        <div class="module-row"><span class="m-name">setup_project.py</span><span class="m-loc">176</span><span class="m-desc">External repo registration + .farewell inject</span><span class="m-dep">config, archetype, context_manager</span></div>
+        <div class="module-row"><span class="m-name">task_planner.py</span><span class="m-loc">167</span><span class="m-desc">Goal → tickets decomposition</span><span class="m-dep">config, archetype</span></div>
+        <div class="module-row"><span class="m-name">core/io.py</span><span class="m-loc">25</span><span class="m-desc">Atomic JSON read/write</span><span class="m-dep">stdlib</span></div>
+        <div class="module-row"><span class="m-name">core/memory.py</span><span class="m-loc">68</span><span class="m-desc">MEMORY.md + USER.md per project</span><span class="m-dep">config, core/io</span></div>
+        <div class="module-row"><span class="m-name">core/session.py</span><span class="m-loc">79</span><span class="m-desc">Session lifecycle + handoff generation</span><span class="m-dep">config, core/io</span></div>
+        <div class="module-row"><span class="m-name">core/learning.py</span><span class="m-loc">133</span><span class="m-desc">Pattern + glossary extraction from handoffs</span><span class="m-dep">config</span></div>
+        <div class="module-row"><span class="m-name">commands/__init__.py</span><span class="m-loc">301</span><span class="m-desc">Argparse CLI → 17 subcommands</span><span class="m-dep">all modules</span></div>
+        <div class="module-row"><span class="m-name">commands/state.py</span><span class="m-loc">102</span><span class="m-desc">status, verify, health</span><span class="m-dep">verify, router_client, core/memory</span></div>
+        <div class="module-row"><span class="m-name">commands/plan.py</span><span class="m-loc">194</span><span class="m-desc">todo + done (auto-compress)</span><span class="m-dep">core/memory, core/session, pre_commit</span></div>
+        <div class="module-row"><span class="m-name">commands/project.py</span><span class="m-loc">164</span><span class="m-desc">Project registry: CRUD + active tracking</span><span class="m-dep">config, archetype, setup_project</span></div>
+        <div class="module-row"><span class="m-name">commands/memory.py</span><span class="m-loc">90</span><span class="m-desc">Memory show/edit/save + sessions</span><span class="m-dep">core/memory, core/session</span></div>
+        <div class="module-row"><span class="m-name">commands/handoff_cmd.py</span><span class="m-loc">81</span><span class="m-desc">Handoff CRUD + search/export</span><span class="m-dep">core/session, core/memory, config</span></div>
+        <div class="module-row"><span class="m-name">commands/notes_cmd.py</span><span class="m-loc">27</span><span class="m-desc">Glossary show/add</span><span class="m-dep">context_manager</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA FLOWS -->
+  <div class="card full">
+    <div class="card-header"><h2>🔄 Key Data Flows</h2></div>
+    <div class="card-body">
+      <div class="flow-grid">
+        <div class="flow-card">
+          <h3>🚀 Session Start</h3>
+          <ol>
+            <li>OpenCode loads <strong>PERSONA.md</strong> + <strong>PROTOCOL.md</strong> as instructions</li>
+            <li><code>/start</code> verifies persona files exist</li>
+            <li>Pings 9Router health endpoint</li>
+            <li>Shows active project context</li>
+            <li>AI reads persona → knows who they are + who Boss is</li>
+          </ol>
+        </div>
+        <div class="flow-card">
+          <h3>📅 Daily Check</h3>
+          <ol>
+            <li><code>/daily</code>: verify persona</li>
+            <li><code>sync</code>: read <strong>farewell.combos.jsonc</strong></li>
+            <li>Resolve <code>${PLACEHOLDER}</code>s in <strong>opencode.template.jsonc</strong></li>
+            <li>Write <strong>opencode.jsonc</strong></li>
+            <li>Ping 9Router → report health</li>
+          </ol>
+        </div>
+        <div class="flow-card">
+          <h3>📝 Handoff Cycle</h3>
+          <ol>
+            <li><code>done</code>: pre-commit check → git add → git commit → git push</li>
+            <li><code>generate_handoff()</code>: writes <code>.farewell/memory/{code}-{name}/handoff-*.md</code></li>
+            <li>Updates MEMORY.md with session summary</li>
+            <li>Archives TODO.md, creates fresh task list</li>
+            <li>Next session: <code>last_handoff()</code> resumes from last handoff</li>
+          </ol>
+        </div>
+        <div class="flow-card">
+          <h3>🏗️ Multi-Repo</h3>
+          <ol>
+            <li><code>setup-project /path/to/repo</code>: detects archetype, injects <code>.farewell/</code></li>
+            <li>Registers in <code>.farewell/projects.txt</code></li>
+            <li><code>project switch &lt;code&gt;</code>: switches active project context</li>
+            <li>Each project has isolated MEMORY.md, USER.md, AUTO-GLOSSARY.md</li>
+            <li>Zero footprint on target repo (only .farewell/ dir)</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RUNTIME DATA -->
+  <div class="card full">
+    <div class="card-header"><h2>🗃️ Runtime Data (.farewell/)</h2></div>
+    <div class="card-body">
+      <div class="flow-grid">
+        <div class="flow-card">
+          <h3>active.json</h3>
+          <div style="font-size:12px;color:#8b949e;">Current active project code + name</div>
+          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">{"code":"001","name":"farewell-helper"}</pre>
+        </div>
+        <div class="flow-card">
+          <h3>projects.txt</h3>
+          <div style="font-size:12px;color:#8b949e;">Registered sub-projects list</div>
+          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">001|farewell-helper
+002|service-hub</pre>
+        </div>
+        <div class="flow-card">
+          <h3>memory/{code}-{name}/</h3>
+          <div style="font-size:12px;color:#8b949e;">Per-project memory + lineage + handoffs</div>
+          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">MEMORY.md       (2.2K chars max)
+USER.md         (1.4K chars max)
+lineage.json    (session history)
+handoff-*.md    (session handoffs)</pre>
+        </div>
+        <div class="flow-card">
+          <h3>context/{code}-{name}/</h3>
+          <div style="font-size:12px;color:#8b949e;">Auto-glossary + ADRs</div>
+          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">AUTO-GLOSSARY.md (domain terms)
+ADR-*.md        (architecture decisions)</pre>
+        </div>
+        <div class="flow-card">
+          <h3>cache-monitor/</h3>
+          <div style="font-size:12px;color:#8b949e;">Token usage tracking</div>
+          <pre style="background:#0d1117;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;color:#c9d1d9;">{code}-{name}-session.json
+{code}-{name}-{YYYYMMDD}.json</pre>
+        </div>
+        <div class="flow-card">
+          <h3>metadata.json</h3>
+          <div style="font-size:12px;color:#8b949e;">Project metadata (created, accessed, sync, stack)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENT ONBOARDING -->
+  <div class="card full">
+    <div class="card-header"><h2>🤖 For the Next AI Agent</h2></div>
+    <div class="card-body">
+      <div class="flow-grid">
+        <div class="flow-card">
+          <h3>📖 Read First</h3>
+          <ol>
+            <li><code>PERSONA.md</code> — who you are, who Boss is</li>
+            <li><code>PROTOCOL.md</code> — how to work, PLAN/BUILD rules</li>
+            <li><code>farewell.combos.jsonc</code> — model combo config</li>
+            <li><code>opencode.template.jsonc</code> — agent config template</li>
+            <li><code>ARCHITECTURE.json</code> — this codebase in JSON</li>
+          </ol>
+        </div>
+        <div class="flow-card">
+          <h3>🛠️ Common Tasks</h3>
+          <ul>
+            <li><strong>Add CLI command</strong>: <code>commands/__init__.py</code> parser + impl in <code>commands/</code></li>
+            <li><strong>Add MCP tool</strong>: <code>mcp.py</code> TOOLS list + _CMD_MAP</li>
+            <li><strong>Add 9Router API</strong>: <code>router_client.py</code> new function</li>
+            <li><strong>Add combo tier</strong>: <code>farewell.combos.jsonc</code> + template placeholder</li>
+            <li><strong>Add skill</strong>: <code>skills/{name}/SKILL.md</code> with frontmatter</li>
+            <li><strong>Write tests</strong>: <code>tests/test_*.py</code>, run with <code>pytest</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="card full" style="text-align:center;border-color:#21262d;">
+    <div class="card-body" style="color:#8b949e;font-size:12px;">
+      <strong>ARCHITECTURE.html</strong> — Self-contained architecture map. Generated from codebase analysis.<br>
+      <strong>ARCHITECTURE.json</strong> — Structured representation for AI agent consumption.<br>
+      <code>farewell-helper v5.0.0</code> — 4 pillars. One session. KISS.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.toggle').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('collapsed');
+      const target = document.getElementById(el.dataset.target);
+      if (target) target.classList.toggle('collapsed');
+    });
+  });
+</script>
+</body>
+</html>
