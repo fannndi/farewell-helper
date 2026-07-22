@@ -76,6 +76,31 @@ def fetch_combos() -> dict | None:
         return None
 
 
+def fetch_settings() -> dict:
+    """Fetch 9Router settings. Returns dict with token-saver keys or empty on failure."""
+    url = f"{config.router_base_url()}/api/settings"
+    try:
+        req = urllib.request.Request(url, headers=_dashboard_headers())
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode())
+    except Exception as e:
+        from .helpers import warn
+        warn(f"fetch_settings failed: {e}")
+        return {}
+
+
+def check_token_saver_conflicts() -> list[str]:
+    """Check 9Router token saver features that conflict with PERSONA.md.
+    Returns list of active conflicts (ponytail, caveman)."""
+    settings = fetch_settings()
+    conflicts: list[str] = []
+    if settings.get("ponytailEnabled"):
+        conflicts.append(f"Ponytail ({settings.get('ponytailLevel', 'full')}) — conflicts with PERSONA.md YAGNI + identity")
+    if settings.get("cavemanEnabled"):
+        conflicts.append(f"Caveman ({settings.get('cavemanLevel', 'full')}) — conflicts with PERSONA.md communication rules")
+    return conflicts
+
+
 def ping() -> dict:
     import time
     t0 = time.time()

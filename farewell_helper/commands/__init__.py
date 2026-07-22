@@ -168,24 +168,20 @@ def _cmd_daily() -> None:
 
 
 def _check_token_saver() -> None:
-    """Best-effort token-saver check. Dashboard page exists but data is client-rendered."""
-    import urllib.request
-    from .. import config
-    from ..router_client import _dashboard_headers
-    url = f"{config.router_base_url()}/dashboard/token-saver"
+    """Check 9Router token saver features for PERSONA.md conflicts."""
+    from ..router_client import check_token_saver_conflicts
+    from ..helpers import info, warn
     try:
-        req = urllib.request.Request(url, headers=_dashboard_headers())
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            html = resp.read().decode()
-            import re
-            title = re.search(r"<title>(.*?)</title>", html)
-            title_text = title.group(1) if title else "9Router Dashboard"
-            from ..helpers import info
-            info(f"Token-saver page loaded ({title_text})")
-            info("Token-saver config: only accessible via browser session (SPA)")
+        conflicts = check_token_saver_conflicts()
+        if conflicts:
+            warn("Token saver conflicts with PERSONA.md detected:")
+            for c in conflicts:
+                info(f"  {c}")
+            info("Disable Ponytail + Caveman in 9Router dashboard > Token Saver")
+        else:
+            info("Token saver: no conflicts")
     except Exception as e:
-        from ..helpers import info
-        info(f"Token-saver page unavailable: {e}")
+        info(f"Token-saver check unavailable: {e}")
 
 
 def _cmd_status() -> None:
@@ -219,6 +215,14 @@ def _cmd_start() -> None:
     alive = ping()
     if alive["alive"]:
         ok(f"9Router ALIVE ({alive['latency_ms']}ms)")
+        from ..router_client import check_token_saver_conflicts
+        conflicts = check_token_saver_conflicts()
+        if conflicts:
+            from ..helpers import warn
+            warn("Token saver conflicts with PERSONA.md:")
+            for c in conflicts:
+                info(f"  {c}")
+            info("Disable Ponytail + Caveman: 9Router dashboard > Token Saver")
     else:
         info("9Router not running — start with: 9router")
     info("Next: load all 4 skills then wait for Boss goal")

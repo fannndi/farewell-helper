@@ -87,6 +87,22 @@ def verify() -> dict:
         "label": f"9Router {config.router_base_url()}: {'ALIVE' if router_alive else 'DOWN'} ({router.get('latency_ms', '?')}ms)",
     })
 
+    if router_alive:
+        from .router_client import check_token_saver_conflicts
+        conflicts = check_token_saver_conflicts()
+        for c in conflicts:
+            results.append({
+                "category": "9router",
+                "status": "warn",
+                "label": f"Token saver conflict: {c}",
+            })
+        if not conflicts:
+            results.append({
+                "category": "9router",
+                "status": "pass",
+                "label": "Token saver: no conflicts with PERSONA.md",
+            })
+
     total_pass = sum(1 for r in results if r["status"] == "pass")
     total_warn = sum(1 for r in results if r["status"] == "warn")
     total_fail = sum(1 for r in results if r["status"] == "fail")
