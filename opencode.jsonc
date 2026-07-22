@@ -23,7 +23,7 @@
           "tool_call": true,
           "limit": {
             "context": 1000000,
-            "output": 8192
+            "output": 128000
           }
         },
         "Execution_Paid": {
@@ -32,7 +32,7 @@
           "tool_call": true,
           "limit": {
             "context": 1000000,
-            "output": 8192
+            "output": 128000
           }
         },
         "Pro_Plan": {
@@ -41,7 +41,7 @@
           "tool_call": true,
           "limit": {
             "context": 1000000,
-            "output": 8192
+            "output": 128000
           }
         },
         "Codex": {
@@ -50,7 +50,7 @@
           "tool_call": true,
           "limit": {
             "context": 1000000,
-            "output": 8192
+            "output": 128000
           }
         }
       }

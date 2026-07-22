@@ -7,7 +7,7 @@ from . import config
 DEFAULT_MODEL_CONFIG = {
     "reasoning": True,
     "tool_call": True,
-    "limit": {"context": 1000000, "output": 8192},
+    "limit": {"context": 1000000, "output": 128000},
 }
 
 
@@ -45,6 +45,7 @@ def render() -> dict | None:
             models[name].setdefault("tool_call", True)
             limits = models[name].setdefault("limit", {})
             limits["context"] = DEFAULT_MODEL_CONFIG["limit"]["context"]
+            limits["output"] = DEFAULT_MODEL_CONFIG["limit"]["output"]
 
     # Update top-level model if not set to a known combo
     top_model = config_data.get("model", "")
