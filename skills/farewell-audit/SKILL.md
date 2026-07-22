@@ -1,11 +1,17 @@
 ---
 name: farewell-audit
-description: Use when studying a new codebase, learning from external project source, or understanding how something works before building on it — deep code forensics, per-file analysis.
+description: Use when studying a new codebase, learning from external project source, or understanding how something works before building on it — deep code forensics, per-file analysis. Leverages codebase-memory-mcp knowledge graph when available.
 ---
 
 # Code Audit — Per-File Deep Analysis
 
 Study a codebase file by file, layer by layer. Build a mental model of how everything connects.
+
+**If `codebase-memory-mcp` is installed**, index the project first (`Index this project` or `codebase-memory-mcp index`), then use its MCP tools for structural queries (trace call chains, find dead code, map HTTP routes, query the knowledge graph). This is 120x more token-efficient than manual grep/read.
+
+## Phase 0: Index (when codebase-memory-mcp available)
+
+Index the project. This creates a persistent knowledge graph of functions, classes, call chains, and dependencies. Run once per project. The graph survives across sessions.
 
 ## Phase 1: File Inventory
 

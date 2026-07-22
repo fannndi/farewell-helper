@@ -83,6 +83,16 @@ npm i -g snip
 
 `farewell_helper verify` will confirm it's installed. Works transparently with OpenCode.
 
+## Recommended: Codebase-Memory MCP
+
+Install [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp) for structural codebase indexing — 120x fewer tokens than file-by-file search:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DeusData/codebase-memory-mcp/main/install.sh | bash
+```
+
+Creates a knowledge graph from your codebase (158 languages, Linux kernel in 3 min). `farewell-audit` skill works best with this backend. Auto-index on project open.
+
 ## Principles
 
 1. Single source of truth per concept

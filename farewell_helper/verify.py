@@ -132,6 +132,18 @@ def verify() -> dict:
         "label": f"Snip: {'installed (token saving)' if snip_ok else 'not installed — install: npm i -g snip'}" if snip_ok else "Snip: not installed — install for 60-90% shell output compression",
     })
 
+    import subprocess as _sp
+    try:
+        cbm = _sp.run(["codebase-memory-mcp", "--version"], capture_output=True, timeout=5)
+        cbm_ok = cbm.returncode == 0
+    except Exception:
+        cbm_ok = False
+    results.append({
+        "category": "config",
+        "status": "pass" if cbm_ok else "warn",
+        "label": f"Codebase-Memory: {'installed (knowledge graph)' if cbm_ok else 'recommended — curl install.sh | bash for 120x fewer audit tokens'}",
+    })
+
     total_pass = sum(1 for r in results if r["status"] == "pass")
     total_warn = sum(1 for r in results if r["status"] == "warn")
     total_fail = sum(1 for r in results if r["status"] == "fail")
