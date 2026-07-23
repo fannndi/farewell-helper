@@ -74,7 +74,7 @@ def main() -> None:
 
     # project
     p = sub.add_parser("project", help="List, switch, unregister, or show active project")
-    p.add_argument("action", nargs="?", default="status", choices=["list", "switch", "unregister", "status", "help"])
+    p.add_argument("action", choices=["list", "switch", "unregister", "discover", "status", "help"], nargs="?", default="status")
     p.add_argument("code", nargs="?", default="", help="Project code to switch/unregister")
     p.set_defaults(func=lambda args: _cmd_project(args))
 
@@ -170,6 +170,17 @@ def _cmd_daily() -> None:
     _check_token_saver()
 
     info("Step 5/5: Health check")
+    # Check for shortcuts in sub-project/
+    from ..setup_project import discover_shortcuts
+    shortcuts = discover_shortcuts()
+    if shortcuts:
+        info(f"Sub-project shortcuts detected ({len(shortcuts)}):")
+        for sc in shortcuts:
+            status = "REGISTERED" if sc["registered"] else ("HAS .farewell" if sc["has_farewell"] else "UNREGISTERED")
+            tag = "green" if sc["registered"] else "yellow"
+            from ..helpers import c
+            info(f"  {sc['name']} \u2192 {sc['target']} [{c(status, tag)}]")
+
     from ..router_client import ping
     alive = ping()
     if alive["alive"]:

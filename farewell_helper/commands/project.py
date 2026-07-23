@@ -195,12 +195,27 @@ def cmd_project(args: argparse.Namespace) -> None:
         if active["code"] == p["code"]:
             set_active("001", "farewell-helper")
         ok(f"Unregistered project {p['code']}-{p['name']}")
+    elif args.action == "discover":
+        from ..setup_project import discover_shortcuts
+        shortcuts = discover_shortcuts()
+        if not shortcuts:
+            print("  No shortcuts found in sub-project/ directory.")
+            print("  Add .lnk shortcuts to sub-project/ to auto-discover external projects.")
+            return
+        print(f"\n  {c('Shortcut Discovery', 'cyan')}")
+        for sc in shortcuts:
+            tag = c("REGISTERED", "green") if sc["registered"] else (c("HAS .farewell", "yellow") if sc["has_farewell"] else c("UNREGISTERED", "red"))
+            print(f"  {sc['name']}: {sc['target']} [{tag}]")
+            if not sc["registered"]:
+                print(f"    \u2192 Run: setup-project \"{sc['target']}\"")
+        print()
     elif args.action == "help":
         print("""
   project list               - Show all registered projects
   project switch <code>      - Switch active project
   project unregister <code>  - Remove project from registry and cleanup .farewell
   project status             - Show current active project (detailed)
+  project discover           - Scan sub-project/ for .lnk shortcuts
 """)
     else:
         active = get_active()

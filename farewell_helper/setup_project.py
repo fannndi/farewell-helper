@@ -236,6 +236,66 @@ def check_sub_project() -> None:
         info("It may already be registered. Run 'project list' to check")
 
 
+def discover_shortcuts() -> list[dict]:
+    """Scan sub-project/ directory for .lnk shortcuts and resolve targets.
+
+    Returns list of {name, target, is_git, has_farewell, registered}.
+    """
+    import subprocess
+    import sys
+    sub_dir = config.ROOT_DIR / "sub-project"
+    if not sub_dir.exists():
+        return []
+
+    from .commands.project import _load_projects
+    registered_paths = {config.project_path(p["code"]) for p in _load_projects() if config.project_path(p["code"])}
+
+    # Use a single PowerShell invocation to resolve all shortcuts
+    lnk_files = list(sub_dir.glob("*.lnk"))
+    if not lnk_files:
+        return []
+
+    # Build PowerShell script to resolve shortcuts
+    ps_script = "$shell = New-Object -ComObject WScript.Shell\n"
+    for i, lnk in enumerate(lnk_files):
+        ps_script += f"""$sc{i} = $shell.CreateShortcut("{lnk}")
+Write-Output "SHORTCUT:{lnk.stem}|{lnk}|$($sc{i}.TargetPath)"
+"""
+
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps_script],
+            capture_output=True, text=True, timeout=10,
+        )
+    except Exception:
+        return []
+
+    results: list[dict] = []
+    for line in r.stdout.strip().splitlines():
+        line = line.strip()
+        if not line.startswith("SHORTCUT:"):
+            continue
+        _, rest = line.split(":", 1)
+        parts = rest.split("|", 2)
+        if len(parts) < 3:
+            continue
+        name, _, target_path = parts
+        target_path = target_path.strip()
+        if not target_path or not Path(target_path).exists():
+            continue
+
+        target = Path(target_path).resolve()
+        results.append({
+            "name": name,
+            "shortcut": str(sub_dir / f"{name}.lnk"),
+            "target": str(target),
+            "is_git": (target / ".git").exists(),
+            "has_farewell": (target / ".farewell").exists(),
+            "registered": target in registered_paths,
+        })
+    return results
+
+
 def get_effective_skills(project_path: Path) -> list[str]:
     from .archetype import detect
     arc = detect(project_path)
