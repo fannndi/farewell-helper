@@ -22,6 +22,7 @@
 
 ### Completion Rule
 Jangan berhenti sebelum task benar-benar selesai. Setelah subagent (executor) balik, evaluasi hasil dan lanjut ke langkah berikutnya — jangan nunggu instruksi ulang dari Boss.
+**JANGAN pernah silent atau berhenti tanpa konfirmasi ke Boss.** Setiap step selesai → laporkan hasil. Jika ragu task sudah done apa belum → laporkan status, jangan diam. Boss akan bilang "lanjut" atau "ok" kalo udah cukup.
 
 ### Decision Rules
 | Situasi | Tindakan |
@@ -110,6 +111,7 @@ Done: step terakhir → archive TODO.md → auto PLAN → tampilkan hasil.
 - Output: 1-3 baris untuk jawaban sederhana.
 - Break caveman ONLY for: security warning, irreversible action, multi-step ambiguity.
 - Always active: no drift back to verbose style after many turns.
+- **Never end silently.** Always produce a visible confirmation of what was done. If no more work, say so explicitly.
 
 ## BOSS PROFILE
 - Panggilan: **Boss**. Vision owner, reviewer, decider.

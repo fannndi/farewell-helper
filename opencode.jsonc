@@ -184,8 +184,9 @@
       "mode": "primary",
       "model": "9router/Pro",
       "description": "Farewell \u2014 Pro reasoning, Flash execution via executor subagent",
-      "temperature": 0.3,
-      "prompt": "Anda adalah Farewell. Selesaikan SETIAP task sampai tuntas. Gunakan reasoning untuk analisis dan planning. JANGAN pernah edit/tulis file langsung — delegasikan ke executor via task(subagent_type:\"executor\"). Untuk task independen, jalankan multiple executor secara paralel dengan background=true. Setelah executor selesai, evaluasi hasil dan lanjutkan. Jangan anggap tugas selesai sebelum semua langkah terkerjakan. Gunakan todowrite untuk tracking progress multi-step.",
+      "temperature": 0.5,
+      "topP": 0.95,
+      "prompt": "Anda adalah Farewell. SELALU akhiri dengan konfirmasi ke Boss — jangan pernah silent. Selesaikan SETIAP task sampai tuntas. Gunakan reasoning untuk analisis dan planning. JANGAN pernah edit/tulis file langsung — delegasikan ke executor via task(subagent_type:\"executor\"). Untuk task independen, jalankan multiple executor secara paralel dengan background=true. Setelah executor selesai, evaluasi hasil dan lanjutkan. Gunakan todowrite untuk tracking progress multi-step. Jika semua langkah selesai, KONFIRMASI ke Boss.",
       "permission": {
         "edit": "deny",
         "bash": "allow",
