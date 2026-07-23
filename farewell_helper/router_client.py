@@ -1,79 +1,109 @@
+"""9Router API client — health checks, combo fetch, token saver, auth."""
+
 import json
 import os
 import urllib.request
 import urllib.error
+from http.cookiejar import Cookie, CookieJar
 from . import config
 
 
-def _headers() -> dict[str, str]:
-    key = config.get_api_key()
-    base = {"Content-Type": "application/json"}
-    if key:
-        base["Authorization"] = f"Bearer {key}"
-    return base
-
-
-def _dashboard_headers() -> dict[str, str]:
-    """Return headers with auth_token cookie for dashboard API."""
-    base = {"Content-Type": "application/json"}
-    token = os.environ.get("NINEROUTER_AUTH_TOKEN", "")
-    if not token:
-        env_path = config.ROOT_DIR / ".env"
-        if env_path.exists():
-            for line in env_path.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if line.startswith("NINEROUTER_AUTH_TOKEN") and "=" in line:
-                    token = line.split("=", 1)[1].strip()
-                    break
-    if token:
-        base["Cookie"] = f"auth_token={token}"
-    return base
-
-
-def chat(model: str, messages: list[dict], timeout: int = 120) -> dict:
-    body = json.dumps({"model": model, "messages": messages, "stream": False}).encode()
+def _dashboard_session() -> tuple[urllib.request.OpenerDirector, str]:
+    """Get authenticated opener + auth_token for dashboard API.
+    Priority: env var → .env file → login with password.
+    Falls back to login if stored token fails."""
+    
+    # Try login-based session first (most reliable)
+    password = os.environ.get("INITIAL_PASSWORD", "123456")
+    cj = CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    data = json.dumps({"password": password}).encode()
     req = urllib.request.Request(
-        f"{config.router_base_url()}/v1/chat/completions",
-        data=body, headers=_headers(),
+        f"{config.router_base_url()}/api/auth/login",
+        data=data,
+        headers={"Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read())
-
-
-def models(kind: str = "") -> list[dict]:
-    url = f"{config.router_base_url()}/v1/models"
-    if kind:
-        url += f"?kind={kind}"
     try:
-        req = urllib.request.Request(url, headers=_headers())
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode())
-            return data.get("data", [])
-    except Exception as e:
+        resp = opener.open(req, timeout=5)
+        if resp.status == 200:
+            for cookie in cj:
+                if cookie.name == "auth_token":
+                    return opener, cookie.value
+    except Exception:
+        pass
+
+    # Fallback: try NINEROUTER_AUTH_TOKEN from env
+    token = os.environ.get("NINEROUTER_AUTH_TOKEN", "")
+    if token:
+        cj2 = CookieJar()
+        opener2 = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj2))
+        import time
+        c = Cookie(0, "auth_token", token, None, False,
+                   "localhost", False, False, "/", True,
+                   False, None, True, None, None, {})
+        cj2.set_cookie(c)
+        return opener2, token
+
+    # Fallback: try from .env file
+    env_path = config.ROOT_DIR / ".env"
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("NINEROUTER_AUTH_TOKEN") and "=" in line:
+                token = line.split("=", 1)[1].strip()
+                if token:
+                    cj3 = CookieJar()
+                    opener3 = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj3))
+                    c = Cookie(0, "auth_token", token, None, False,
+                               "localhost", False, False, "/", True,
+                               False, None, True, None, None, {})
+                    cj3.set_cookie(c)
+                    return opener3, token
+
+    raise RuntimeError("No authentication available — set INITIAL_PASSWORD or NINEROUTER_AUTH_TOKEN")
+
+
+def _api_get(path: str) -> dict | None:
+    """GET request to dashboard API with auto-auth."""
+    base = config.router_base_url()
+    opener, token = _dashboard_session()
+    req = urllib.request.Request(
+        f"{base}{path}",
+        headers={
+            "Content-Type": "application/json",
+            "Cookie": f"auth_token={token}",
+        },
+    )
+    try:
+        resp = urllib.request.urlopen(req, timeout=10)
+        return json.loads(resp.read().decode())
+    except (urllib.error.HTTPError, Exception) as e:
         from .helpers import warn
-        warn(f"models fetch failed: {e}")
-        return []
+        warn(f"API GET {path} failed: {e}")
+        return None
 
 
 def fetch_combos() -> dict | None:
     """Fetch combos from 9Router dashboard API. Returns {name: models[]} or None."""
-    url = f"{config.router_base_url()}/api/combos"
-    try:
-        req = urllib.request.Request(url, headers=_dashboard_headers())
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode())
-            combos_raw = data.get("combos", [])
-            result: dict[str, list[str]] = {}
-            for c in combos_raw:
-                name = c.get("name", "")
-                models = c.get("models", [])
-                if name:
-                    result[name] = models
-            return result
-    except Exception as e:
-        from .helpers import warn
-        warn(f"fetch_combos failed: {e}")
+    data = _api_get("/api/combos")
+    if not data:
         return None
+    combos_raw = data.get("combos", [])
+    result: dict[str, list[str]] = {}
+    for c in combos_raw:
+        name = c.get("name", "")
+        models = c.get("models", [])
+        if name:
+            result[name] = models
+    return result
+
+
+def fetch_settings() -> dict:
+    """Fetch 9Router settings. Returns dict or empty on failure."""
+    data = _api_get("/api/settings")
+    if data:
+        return data
+    return {}
 
 
 def combo_health_check() -> dict:
@@ -92,9 +122,7 @@ def combo_health_check() -> dict:
     combo_strategies = settings.get("comboStrategies", {})
     for name in combo_names:
         cs = combo_strategies.get(name, {})
-        if cs.get("fallbackStrategy") == "fallback":
-            pass
-        elif cs.get("fallbackStrategy") == "round-robin":
+        if cs.get("fallbackStrategy") == "round-robin":
             suggestions.append(f"'{name}' is round-robin — fallback recommended for predictable output")
 
     if settings.get("rtkEnabled"):
@@ -115,19 +143,6 @@ def combo_health_check() -> dict:
         "issues": issues,
         "suggestions": suggestions,
     }
-
-
-def fetch_settings() -> dict:
-    """Fetch 9Router settings. Returns dict with token-saver keys or empty on failure."""
-    url = f"{config.router_base_url()}/api/settings"
-    try:
-        req = urllib.request.Request(url, headers=_dashboard_headers())
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return json.loads(resp.read().decode())
-    except Exception as e:
-        from .helpers import warn
-        warn(f"fetch_settings failed: {e}")
-        return {}
 
 
 def check_token_saver_conflicts() -> list[str]:
@@ -151,3 +166,24 @@ def ping() -> dict:
             return {"alive": resp.status == 200, "latency_ms": round((time.time() - t0) * 1000)}
     except Exception:
         return {"alive": False, "latency_ms": round((time.time() - t0) * 1000)}
+
+
+# Legacy exports for backward compatibility
+def _dashboard_headers() -> dict[str, str]:
+    """Legacy — kept for backward compat. New code uses _dashboard_session()."""
+    password = os.environ.get("INITIAL_PASSWORD", "123456")
+    cj = CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    data = json.dumps({"password": password}).encode()
+    req = urllib.request.Request(
+        f"{config.router_base_url()}/api/auth/login",
+        data=data, headers={"Content-Type": "application/json"},
+    )
+    try:
+        opener.open(req, timeout=5)
+        for cookie in cj:
+            if cookie.name == "auth_token":
+                return {"Content-Type": "application/json", "Cookie": f"auth_token={cookie.value}"}
+    except Exception:
+        pass
+    return {"Content-Type": "application/json"}

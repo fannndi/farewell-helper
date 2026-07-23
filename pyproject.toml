@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "farewell-helper"
-version = "5.0.0"
+version = "6.0.0"
 description = "OpenCode agent + 9Router model gateway + skills + persona"
 requires-python = ">=3.10"
 dependencies = []

@@ -98,6 +98,15 @@
             "context": 1000000,
             "output": 128000
           }
+        },
+        "Free": {
+          "name": "Free",
+          "reasoning": false,
+          "tool_call": true,
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          }
         }
       }
     }
@@ -180,13 +189,26 @@
         "grep": "allow"
       }
     },
+    "validator": {
+      "mode": "subagent",
+      "model": "9router/Free",
+      "description": "Validator \u2014 verifikasi persona, skill usage, dan codebase-memory utilization",
+      "prompt": "You are a validation agent. Verify skill tool usage and codebase-memory MCP tool utilization.\n\n## Domain-Skill Mapping\n- Code analysis/audit \u2192 use codebase-memory (search_graph, trace_path, get_architecture) + farewell-audit skill\n- Bug diagnosis \u2192 farewell-diagnosing-bugs skill\n- API \u2192 farewell-api-design skill\n- TDD/build \u2192 farewell-tdd skill\n- DevOps/DB \u2192 farewell-devops skill\n- Git \u2192 farewell-git skill\n- Error handling \u2192 farewell-error-handling skill\n- Production audit \u2192 farewell-production-audit skill\n- PRD/spec \u2192 farewell-prd skill\n- Workspace setup \u2192 farewell-workspace-audit skill\n- Python \u2192 farewell-python skill\n- Flutter \u2192 farewell-flutter skill\n- Rust \u2192 farewell-rust skill\n- C \u2192 farewell-c skill\n- Frontend \u2192 farewell-frontend skill\n- Ambiguous tasks \u2192 farewell-grilling skill\n- New session \u2192 farewell-persona skill\n\n## Codebase-Memory Tools (use instead of grep/read for code)\nsearch_graph, trace_path, get_architecture, query_graph, search_code, get_code_snippet\n\n## Output Format\nRespond with JSON only: {\"verdict\":\"pass|fail|warn\",\"skill_used\":true|false,\"codebase_memory_used\":true|false,\"issues\":[]}\nBe minimal. No extra text.",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
+    },
     "Farewell": {
       "mode": "primary",
       "model": "9router/Pro",
       "description": "Farewell \u2014 Pro reasoning, Flash execution via executor subagent",
       "temperature": 0.7,
       "topP": 0.95,
-      "prompt": "Anda adalah Farewell. Gunakan reasoning untuk analisis dan planning. JANGAN pernah edit/tulis file langsung. Delegasikan SEMUA penulisan/editan kode ke executor via task(subagent_type:\"executor\"). JANGAN pernah silent. Setiap setelah eksekusi, laporkan hasil ke Boss.",
+      "prompt": "Anda adalah Farewell. 3 role: planner (anda), coder (executor), checker (validator). WAJIB: (1) delegasi SEMUA penulisan/editan kode ke task(subagent_type:\"executor\"), (2) delegasi SEMUA baca/analisis kode asing ke codebase-memory tools (search_graph, trace_path), (3) panggil task(subagent_type:\"validator\") di boot setelah skill load, SEBELUM code analysis asing, dan setiap ~5 turn. JANGAN pernah edit/tulis file langsung \u2014 edit:deny. JANGAN guna grep/read untuk code analysis \u2014 guna codebase-memory. JANGAN silent. Laporkan hasil tiap step ke Boss. DETEKSI SESSION STALE: jika ada history percakapan dari hari SEBELUMNYA, WAJIB bilang \"Session dari hari sebelumnya. Jalankan /start dan /daily dulu.\" JANGAN lanjut bekerja sebelum Boss\u6267\u884c /start.",
       "permission": {
         "edit": "deny",
         "bash": "allow",
