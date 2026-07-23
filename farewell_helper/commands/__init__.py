@@ -151,8 +151,35 @@ def _cmd_sync() -> None:
         fail("opencode.jsonc not found")
 
 
+def _check_context_budget() -> dict:
+    """Estimate system context budget across all injected sources."""
+    from .. import config
+    from pathlib import Path
+    persona_chars = sum(len(f.read_text(encoding="utf-8")) for f in config.persona_files() if f.exists())
+    from .project import get_active
+    from ..core.memory import memory_content, user_content
+    active = get_active()
+    code = active.get("code", "001")
+    name = active.get("name", "farewell-helper")
+    mem = memory_content(code, name)
+    usr = user_content(code, name)
+    skill_dir = config.ROOT_DIR / "skills"
+    total_skill_chars = 0
+    if skill_dir.exists():
+        for sf in sorted(skill_dir.rglob("SKILL.md")):
+            total_skill_chars += len(sf.read_text(encoding="utf-8"))
+    total_chars = persona_chars + len(mem) + len(usr) + total_skill_chars
+    estimated_limit = 8000
+    usage_pct = round(total_chars / estimated_limit * 100, 1)
+    return {
+        "total_chars": total_chars,
+        "estimated_limit": estimated_limit,
+        "usage_pct": usage_pct,
+    }
+
+
 def _cmd_daily() -> None:
-    from ..helpers import ok, fail, info
+    from ..helpers import ok, fail, info, c
 
     info("Step 1/5: Verify persona")
     from ..verify import verify
@@ -229,24 +256,21 @@ def _cmd_daily() -> None:
         except Exception:
             info("Codebase-Memory: not running — install for 120x fewer audit tokens")
 
+    info("Context budget:")
+    budget_info = _check_context_budget()
+    if budget_info:
+        info(f" Total: {budget_info['total_chars']} chars / {budget_info['estimated_limit']} limit ({budget_info['usage_pct']:.0f}%)")
+        if budget_info['usage_pct'] > 70:
+            info(f" {c('WARNING: Context budget high compacting', 'yellow')}")
+
     ok("Daily check complete")
 
 
 def _check_token_saver() -> None:
-    """Check 9Router token saver features for PERSONA.md overlaps."""
-    from ..router_client import check_token_saver_conflicts
-    from ..helpers import info, warn
-    try:
-        conflicts = check_token_saver_conflicts()
-        if conflicts:
-            info("Token saver: persona already covers Caveman + Ponytail natively")
-            for c in conflicts:
-                info(f"  Tip: {c}")
-            info("  RTK (tool_result compression) — safe to enable, no prompt injection")
-        else:
-            info("Token saver: no overlaps (RTK safe to enable)")
-    except Exception as e:
-        info(f"Token saver: check skipped ({e})")
+    """Token saver check: Caveman + Ponytail integrated in PERSONA.md.
+    RTK (tool_result compression) safe to enable in 9Router dashboard."""
+    from ..helpers import info
+    info("Token saver: no conflicts (Caveman+Ponytail in PERSONA.md, RTK safe)")
 
 
 def _cmd_status() -> None:

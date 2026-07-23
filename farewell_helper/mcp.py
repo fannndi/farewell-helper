@@ -117,9 +117,11 @@ def _run_session_init_json() -> str:
         stack = arc.get("stack", "generic")
         result["stack"] = stack
         result["standby_skills"] = get_standby_skills(stack)
+        result["standby_skills_count"] = len(result["standby_skills"])
     else:
         result["stack"] = "unknown"
         result["standby_skills"] = []
+        result["standby_skills_count"] = 0
 
     result["memory"] = memory_content(code, name)
     result["user_profile"] = user_content(code, name)

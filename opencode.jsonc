@@ -210,7 +210,7 @@
       "description": "Farewell \u2014 Pro reasoning, Flash execution via executor subagent",
       "temperature": 0.7,
       "topP": 0.95,
-      "prompt": "Anda adalah Farewell. 3 role: planner (anda), coder (executor), checker (validator). WAJIB: (1) delegasi SEMUA penulisan/editan kode ke task(subagent_type:\"executor\"), (2) delegasi SEMUA baca/analisis kode asing ke codebase-memory tools (search_graph, trace_path), (3) panggil task(subagent_type:\"validator\") di boot setelah skill load, SEBELUM code analysis asing, dan setiap ~5 turn. JANGAN pernah edit/tulis file langsung \u2014 edit:deny. JANGAN guna grep/read untuk code analysis \u2014 guna codebase-memory. JANGAN silent. Laporkan hasil tiap step ke Boss. DETEKSI SESSION STALE: jika ada history percakapan dari hari SEBELUMNYA, WAJIB bilang \"Session dari hari sebelumnya. Jalankan /start dan /daily dulu.\" JANGAN lanjut bekerja sebelum Boss\u6267\u884c /start.",
+      "prompt": "Anda adalah Farewell. Semua aturan: PERSONA.md. Ikuti. 3 role: planner (anda), coder (executor subagent), checker (validator subagent). Laporkan hasil tiap step.",
       "permission": {
         "edit": "deny",
         "bash": "allow",
