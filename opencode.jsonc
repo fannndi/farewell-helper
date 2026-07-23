@@ -325,6 +325,22 @@
     "/pre-commit": {
       "description": "Quality gate: run tests, check TODOs",
       "template": "py -m farewell_helper pre-commit $ARGUMENTS"
+    },
+    "/rotate": {
+      "description": "Auto-detect apply optimal profile",
+      "template": "py -m farewell_helper rotate auto $ARGUMENTS"
+    },
+    "/rotate-pro": {
+      "description": "Switch to Pro: Farewell=Pro, executor=Flash, validator=Free (default profile)",
+      "template": "py -m farewell_helper rotate default $ARGUMENTS"
+    },
+    "/rotate-flash": {
+      "description": "Switch to Flash: Farewell=Flash, executor=Free, validator=Flash (budget profile)",
+      "template": "py -m farewell_helper rotate budget $ARGUMENTS"
+    },
+    "/rotate-free": {
+      "description": "Switch to Free: Farewell=Flash, executor=Free, validator=Pro (experimental profile)",
+      "template": "py -m farewell_helper rotate experimental $ARGUMENTS"
     }
   }
 }

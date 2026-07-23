@@ -188,6 +188,23 @@ farewell-helper setup-project ../other-repo
 farewell-helper sub-project   # Dashboard, switch, register
 ```
 
+### 4 Core Commands
+
+```bash
+farewell-helper start             # Session boot: persona + project + skills + 9Router
+farewell-helper daily             # Health check + sync combos + auto-detect profile
+farewell-helper sub-project       # Dashboard: switch register projects
+farewell-helper rotate auto       # Auto-detect & apply optimal rotation profile
+```
+
+Quick model switch:
+
+```bash
+farewell-helper rotate default      # Pro mode: Farewell=Pro, executor=Flash, validator=Free
+farewell-helper rotate budget       # Flash mode: Farewell=Flash, executor=Free, validator=Flash
+farewell-helper rotate experimental # Free mode: Farewell=Flash, executor=Free, validator=Pro
+```
+
 ## Commands
 
 | Command | Description |
@@ -198,6 +215,11 @@ farewell-helper sub-project   # Dashboard, switch, register
 | `sync` | Fetch 9Router combos → update opencode.jsonc |
 | `verify` | Persona + skills + config + token saver audit |
 | `rotate` | Rotate model assignment across agents |
+| `rotate auto` | Auto-detect & apply optimal profile |
+| `rotate <profile>` | Apply named profile (budget/quality/experimental/custom) |
+| `/rotate-pro` | Slash command: rotate Pro profile |
+| `/rotate-flash` | Slash command: rotate Flash profile |
+| `/rotate-free` | Slash command: rotate Free profile |
 | `status` | Active project + sub-project detection |
 | `sub-project` | Sub-project assistant: dashboard, switch, register |
 | `health` | Full project health (tests, memory, sessions) |
