@@ -125,7 +125,7 @@ def main() -> None:
     # rotate
     p = sub.add_parser("rotate", help="Rotate model assignment across agents (planner/coder/checker)")
     p.add_argument("profile", nargs="?", default="default",
-                   choices=["default", "budget", "quality", "experimental", "custom"],
+                   choices=["default", "budget", "quality", "experimental", "custom", "auto"],
                    help="Rotation profile (default: default)")
     p.add_argument("--planner", choices=["pro", "flash", "free"], help="Override planner model")
     p.add_argument("--coder", choices=["pro", "flash", "free"], help="Override coder model")
@@ -263,12 +263,16 @@ def _cmd_daily() -> None:
         if budget_info['usage_pct'] > 70:
             info(f" {c('WARNING: Context budget high compacting', 'yellow')}")
 
-    # Profile detection
-    from ..rotate import auto_repair_strategy
+    # Profile detection + auto-rotate
+    from ..rotate import auto_rotate, auto_repair_strategy
     try:
-        profile_warnings = auto_repair_strategy()
-        for w in profile_warnings:
-            info(f"  Profile: {w}")
+        for w in auto_repair_strategy():
+            info(f"  {w}")
+        r = auto_rotate()
+        if r["applied"]:
+            info(f"  Auto-rotated: {r['from_profile']} \u2192 {r['to_profile']}")
+        else:
+            info(f"  Profile: {r['message']}")
     except Exception:
         pass
 
@@ -334,6 +338,19 @@ def _cmd_start() -> None:
 
     from ..mcp import _run_session_init_json
     print(f"\nSESSION_CTX: {_run_session_init_json()}")
+
+    # Auto-detect profile and rotate
+    from ..rotate import auto_rotate
+    from ..helpers import info
+    try:
+        r = auto_rotate()
+        if r["applied"]:
+            info(f"Profile rotated: {r['from_profile']} \u2192 {r['to_profile']}")
+        else:
+            info(f"Profile: {r['message']}")
+    except Exception:
+        info("Profile: check skipped")
+
     ok("Ready.")
 
 
@@ -563,7 +580,10 @@ def _cmd_sub_project(args: argparse.Namespace) -> None:
 
 def _cmd_rotate(args: argparse.Namespace) -> None:
     """Rotate model assignment across agents."""
-    from ..rotate import cmd_rotate, PROFILES
+    from ..rotate import cmd_rotate, cmd_rotate_auto, PROFILES
+    if args.profile == "auto":
+        cmd_rotate_auto()
+        return
     if args.profile == "custom":
         if not any([args.planner, args.coder, args.checker]):
             from ..helpers import fail

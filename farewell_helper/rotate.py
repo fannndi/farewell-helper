@@ -222,6 +222,85 @@ def profile_name_from_targets(targets: dict[str, str]) -> str | None:
     return None
 
 
+def optimal_profile(current: dict[str, str]) -> str | None:
+    """Determine the optimal profile based on current combo targets.
+    
+    Logic:
+    1. If targets match a known profile exactly → return it  
+    2. If all combos have same model key → broken state → default
+    3. Otherwise, infer from planner's model + checker's model
+    """
+    # 1. Exact match
+    matched = profile_name_from_targets(current)
+    if matched:
+        return matched
+
+    # 2. All same? Broken, default
+    vals = set(current.values())
+    if len(vals) <= 1:
+        return "default"
+
+    # 3. Infer from planner + checker
+    planner = current.get("planner")
+    coder = current.get("coder")
+    checker = current.get("checker")
+
+    # Known combos
+    if planner == "pro" and checker == "free":
+        return "default"
+    if planner == "pro" and checker == "pro":
+        return "quality"
+    if planner == "flash" and checker == "flash":
+        return "budget"
+    if planner == "flash" and checker == "pro":
+        return "experimental"
+
+    # Partial match: check each profile's closeness
+    # Default fallback
+    return "default"
+
+
+def auto_rotate(force: bool = False) -> dict:
+    """Auto-detect and apply the optimal profile.
+    
+    Args:
+        force: If True, apply even if already on a known profile.
+               If False, only apply if current state doesn't match any profile.
+    
+    Returns:
+        {applied: bool, from_profile: str|None, to_profile: str, message: str}
+    """
+    current = detect_current_profile()
+    if not current:
+        return {"applied": False, "from_profile": None, "to_profile": "default", 
+                "message": "Could not detect current profile"}
+
+    optimal_name = optimal_profile(current)
+    if not optimal_name:
+        optimal_name = "default"
+
+    matched = profile_name_from_targets(current)
+    
+    if matched == optimal_name and not force:
+        return {"applied": False, "from_profile": matched, "to_profile": matched,
+                "message": f"Already on optimal profile: {matched}"}
+
+    # Apply rotation
+    profile = resolve_profile(optimal_name)
+    result = apply_rotation(profile)
+    
+    from_name = matched or "unknown"
+    applied = len(result.get("applied", [])) > 0 and not result.get("failed")
+    
+    return {
+        "applied": applied,
+        "from_profile": from_name,
+        "to_profile": optimal_name,
+        "message": f"Auto-rotated from {from_name} to {optimal_name} — {result.get('applied', [])}",
+        "detail": result,
+    }
+
+
 def auto_repair_strategy() -> list[str]:
     """Ensure all combos use fallback strategy + detect profile issues.
     Returns list of warnings."""
@@ -341,3 +420,19 @@ def cmd_rotate(profile_name: str, overrides: dict[str, str] | None = None, dry_r
         ok(f"Rotation complete — {profile_name} profile active")
     else:
         warn(f"Rotation completed with {len(result['failed'])} failures")
+
+
+def cmd_rotate_auto() -> None:
+    """CLI entry point: auto-detect and rotate to optimal profile."""
+    
+    info("Auto-detecting optimal profile...")
+    result = auto_rotate()
+    
+    if result["applied"]:
+        ok(f"Rotated: {result['from_profile']} → {result['to_profile']}")
+        for line in result.get("detail", {}).get("applied", []):
+            info(f"  {line}")
+    elif result["from_profile"] == result["to_profile"]:
+        ok(f"Already on optimal profile: {result['to_profile']}")
+    else:
+        warn(f"Could not auto-rotate: {result['message']}")
