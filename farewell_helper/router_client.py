@@ -147,13 +147,22 @@ def combo_health_check() -> dict:
 
 def check_token_saver_conflicts() -> list[str]:
     """Check 9Router token saver features that conflict with PERSONA.md.
-    Returns list of active conflicts (ponytail, caveman)."""
+    Persona already integrates Caveman (terse comm) + Ponytail (YAGNI).
+    Only flag conflicts that would genuinely override persona behavior."""
     settings = fetch_settings()
     conflicts: list[str] = []
     if settings.get("ponytailEnabled"):
-        conflicts.append(f"Ponytail ({settings.get('ponytailLevel', 'full')}) — conflicts with PERSONA.md YAGNI + identity")
+        conflicts.append(
+            f"Ponytail ({settings.get('ponytailLevel', 'full')}) — "
+            "may interfere with PERSONA.md YAGNI rules. "
+            "Prefer: disable Ponytail, persona already has YAGNI Ladder + Not-Lazy Guard."
+        )
     if settings.get("cavemanEnabled"):
-        conflicts.append(f"Caveman ({settings.get('cavemanLevel', 'full')}) — conflicts with PERSONA.md communication rules")
+        conflicts.append(
+            f"Caveman ({settings.get('cavemanLevel', 'full')}) — "
+            "may interfere with PERSONA.md communication rules. "
+            "Prefer: disable Caveman, persona already has Caveman communication rules."
+        )
     return conflicts
 
 

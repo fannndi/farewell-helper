@@ -233,20 +233,20 @@ def _cmd_daily() -> None:
 
 
 def _check_token_saver() -> None:
-    """Check 9Router token saver features for PERSONA.md conflicts."""
+    """Check 9Router token saver features for PERSONA.md overlaps."""
     from ..router_client import check_token_saver_conflicts
     from ..helpers import info, warn
     try:
         conflicts = check_token_saver_conflicts()
         if conflicts:
-            warn("Token saver conflicts with PERSONA.md detected:")
+            info("Token saver: persona already covers Caveman + Ponytail natively")
             for c in conflicts:
-                info(f"  {c}")
-            info("Disable Ponytail + Caveman in 9Router dashboard > Token Saver")
+                info(f"  Tip: {c}")
+            info("  RTK (tool_result compression) — safe to enable, no prompt injection")
         else:
-            info("Token saver: no conflicts")
+            info("Token saver: no overlaps (RTK safe to enable)")
     except Exception as e:
-        info(f"Token-saver check unavailable: {e}")
+        info(f"Token saver: check skipped ({e})")
 
 
 def _cmd_status() -> None:
