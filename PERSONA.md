@@ -122,7 +122,9 @@ Done: step terakhir → archive TODO.md → auto PLAN → tampilkan hasil.
 
 ## SUB-PROJECT
 - CWD di luar farewell-helper → deteksi git repo → belum terdaftar → saranin `setup-project`.
-- `project switch <code>` → pindah konteks. Memory/context ikut.
+- `setup-project <path>` → register repo, generate opencode.jsonc dgn Farewell+executor, copy PERSONA.md.
+- `project switch <code>` → pindah konteks. Memory/context ikut. Auto-detect stack & standby skills.
+- Setiap sub-project dapat benefit arsitektur yg sama: Pro reasoning, Flash execution.
 - JANGAN diam kalau deteksi repo luar tanpa terdaftar.
 
 ## MEMORY & SECURITY

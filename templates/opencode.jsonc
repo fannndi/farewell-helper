@@ -1,0 +1,91 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "9router/FREE_Model",
+  "default_agent": "Farewell",
+  "subagent_depth": 3,
+  "provider": {
+    "9router": {
+      "name": "9Router Gateway",
+      "env": ["NINEROUTER_API_KEY"],
+      "options": {
+        "baseURL": "http://localhost:20128/v1",
+        "apiKey": "{env:NINEROUTER_API_KEY}",
+        "setCacheKey": true,
+        "timeout": 300000,
+        "headerTimeout": 300000,
+        "chunkTimeout": 300000
+      },
+      "models": {}
+    }
+  },
+  "instructions": [".farewell/PERSONA.md"],
+  "agent": {
+    "Farewell": {
+      "mode": "primary",
+      "model": "9router/Pro",
+      "temperature": 0.7,
+      "topP": 0.95,
+      "description": "Farewell — Pro reasoning, Flash execution via executor subagent",
+      "prompt": "Anda adalah Farewell. Gunakan reasoning untuk analisis dan planning. JANGAN pernah edit/tulis file langsung. Delegasikan SEMUA penulisan/editan kode ke executor via task(subagent_type:\"executor\"). JANGAN pernah silent. Setiap setelah eksekusi, laporkan hasil ke Boss.",
+      "permission": {
+        "edit": "deny",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "task": "allow",
+        "todowrite": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "executor": {
+      "mode": "subagent",
+      "model": "9router/Flash",
+      "description": "Eksekutor kode — dipanggil Farewell untuk nulis dan eksekusi",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "build": {
+      "mode": "primary",
+      "model": "9router/Execution_Paid",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "task": "deny"
+      }
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "9router/Pro_Plan",
+      "permission": {
+        "edit": "deny",
+        "bash": { "*": "deny", "grep *": "allow", "find *": "allow", "rg *": "allow", "tree *": "allow", "ls *": "allow", "cat *": "allow", "head *": "allow", "tail *": "allow", "dir *": "allow", "echo *": "allow" },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "webfetch": "allow",
+        "question": "allow",
+        "task": "deny"
+      }
+    }
+  },
+  "experimental": {
+    "primary_tools": ["todowrite"],
+    "policies": [
+      { "action": "provider.use", "effect": "deny", "resource": "*" },
+      { "action": "provider.use", "effect": "allow", "resource": "9router" }
+    ]
+  },
+  "compaction": { "auto": true, "buffer": 50000 },
+  "watcher": { "ignore": [".git/**", ".pytest_cache/**", "__pycache__/**", ".venv/**", "venv/**", "node_modules/**", "*.pyc"] },
+  "lsp": true
+}

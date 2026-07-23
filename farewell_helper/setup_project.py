@@ -98,6 +98,70 @@ def _inject_farewell(target: Path):
     _skills_readme(local_dir)
 
     _add_gitignore(target, dot_dir)
+    _ensure_opencode_config(target)
+    _copy_persona(target, dot_dir)
+
+
+def _copy_persona(target: Path, dot_dir: Path):
+    import shutil
+    source = config.ROOT_DIR / "PERSONA.md"
+    dest = dot_dir / "PERSONA.md"
+    if source.exists() and not dest.exists():
+        shutil.copy2(str(source), str(dest))
+
+
+def _ensure_opencode_config(target: Path):
+    """Generate opencode.jsonc from template if not present, or merge agent config."""
+    import json
+    config_file = target / "opencode.jsonc"
+    template_file = config.ROOT_DIR / "templates" / "opencode.jsonc"
+
+    if not template_file.exists():
+        return
+
+    template = json.loads(template_file.read_text(encoding="utf-8"))
+
+    if not config_file.exists():
+        config_file.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return
+
+    try:
+        existing = json.loads(config_file.read_text(encoding="utf-8"))
+    except Exception:
+        return
+
+    # Merge agents: template agents take priority for Farewell + executor
+    existing.setdefault("agent", {})
+    for name, agent_cfg in template.get("agent", {}).items():
+        if name not in existing["agent"]:
+            existing["agent"][name] = agent_cfg
+
+    # Merge provider if missing
+    existing.setdefault("provider", {})
+    if "9router" not in existing["provider"]:
+        existing["provider"]["9router"] = template["provider"]["9router"]
+
+    # Set key config values if missing
+    existing.setdefault("subagent_depth", template["subagent_depth"])
+    existing.setdefault("default_agent", template["default_agent"])
+
+    # Merge experimental policies
+    existing.setdefault("experimental", {})
+    existing["experimental"].setdefault("policies", template["experimental"]["policies"])
+    existing["experimental"].setdefault("primary_tools", template["experimental"]["primary_tools"])
+
+    # Add farewell-helper as a reference
+    existing.setdefault("references", {})
+    if "farewell-helper" not in existing["references"]:
+        existing["references"]["farewell-helper"] = {
+            "path": str(config.ROOT_DIR).replace("\\", "/"),
+            "description": "Farewell Helper — AI agent orchestration + skills"
+        }
+
+    # Set compaction if missing
+    existing.setdefault("compaction", template["compaction"])
+
+    config_file.write_text(json.dumps(existing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def _skills_readme(local_dir: Path):
