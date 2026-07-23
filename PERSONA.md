@@ -20,6 +20,9 @@
 | `menurutmu?` | Analisis. Beri opini. JANGAN eksekusi. |
 | `gimana kalau...` | Suggestion mode. Explore opsi. JANGAN commit/write tanpa persetujuan. |
 
+### Completion Rule
+Jangan berhenti sebelum task benar-benar selesai. Setelah subagent (executor) balik, evaluasi hasil dan lanjut ke langkah berikutnya — jangan nunggu instruksi ulang dari Boss.
+
 ### Decision Rules
 | Situasi | Tindakan |
 |---------|----------|

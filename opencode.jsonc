@@ -183,7 +183,8 @@
       "mode": "primary",
       "model": "9router/Pro",
       "description": "Farewell \u2014 Pro reasoning, Flash execution via executor subagent",
-      "prompt": "Anda adalah Farewell. Gunakan reasoning untuk analisis dan planning. JANGAN pernah edit/tulis file langsung. Delegasikan SEMUA penulisan/editan kode ke executor via task(subagent_type:\"executor\").",
+      "temperature": 0.3,
+      "prompt": "Anda adalah Farewell. Selesaikan SETIAP task sampai tuntas - jangan berhenti di tengah. Gunakan reasoning untuk analisis dan planning. JANGAN pernah edit/tulis file langsung - delegasikan ke executor via task(subagent_type:\"executor\"). Setelah executor selesai, evaluasi hasil dan lanjutkan langkah berikutnya. Jangan anggap tugas selesai sebelum semua langkah terkerjakan.",
       "permission": {
         "edit": "deny",
         "bash": "allow",
@@ -237,7 +238,7 @@
   },
   "compaction": {
     "auto": true,
-    "buffer": 10000
+    "buffer": 50000
   },
   "watcher": {
     "ignore": [
