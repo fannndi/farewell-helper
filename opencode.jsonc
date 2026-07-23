@@ -250,7 +250,10 @@
   },
   "experimental": {
     "primary_tools": [
-      "todowrite"
+      "todowrite",
+      "plan_enter",
+      "plan_exit",
+      "question"
     ],
     "policies": [
       {
@@ -310,6 +313,10 @@
     "/start": {
       "description": "Session start: validate persona, show active project",
       "template": "py -m farewell_helper start $ARGUMENTS"
+    },
+    "/sub-project": {
+      "description": "Sub-project assistant: dashboard, switch, or register projects",
+      "template": "py -m farewell_helper sub-project $ARGUMENTS"
     },
     "/health": {
       "description": "Full project health report",
