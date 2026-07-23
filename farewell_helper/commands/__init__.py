@@ -263,6 +263,15 @@ def _cmd_daily() -> None:
         if budget_info['usage_pct'] > 70:
             info(f" {c('WARNING: Context budget high compacting', 'yellow')}")
 
+    # Profile detection
+    from ..rotate import auto_repair_strategy
+    try:
+        profile_warnings = auto_repair_strategy()
+        for w in profile_warnings:
+            info(f"  Profile: {w}")
+    except Exception:
+        pass
+
     ok("Daily check complete")
 
 

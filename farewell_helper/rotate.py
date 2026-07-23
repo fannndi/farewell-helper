@@ -184,6 +184,72 @@ def _ensure_fallback_strategy() -> list[str]:
         return []
 
 
+def detect_current_profile() -> dict | None:
+    """Read current 9Router combo targets and detect active profile.
+    Returns {planner: model_key, coder: model_key, checker: model_key} or None."""
+    try:
+        combos = _get_combos()
+        combo_map = {}
+        for c in combos:
+            name = c.get("name", "")
+            models = c.get("models", [])
+            model_id = models[0] if models else None
+            if model_id:
+                for mkey, mid in MODEL_IDS.items():
+                    if mid == model_id:
+                        combo_map[name] = mkey
+                        break
+
+        role_map = {v: k for k, v in AGENT_COMBOS.items()}
+        current = {}
+        for combo_name, mkey in combo_map.items():
+            role = role_map.get(combo_name)
+            if role:
+                current[role] = mkey
+
+        if len(current) >= 3:
+            return current
+        return None
+    except Exception:
+        return None
+
+
+def profile_name_from_targets(targets: dict[str, str]) -> str | None:
+    """Match combo targets against known profiles. Returns profile name or None."""
+    for pname, ptargets in PROFILES.items():
+        if targets == ptargets:
+            return pname
+    return None
+
+
+def auto_repair_strategy() -> list[str]:
+    """Ensure all combos use fallback strategy + detect profile issues.
+    Returns list of warnings."""
+    warnings = []
+    try:
+        changed = _ensure_fallback_strategy()
+        if changed:
+            warnings.append(f"Strategy fixed for {len(changed)} combo(s): {', '.join(changed)}")
+    except Exception:
+        warnings.append("Could not verify combo strategies")
+
+    try:
+        current = detect_current_profile()
+        if current:
+            matched = profile_name_from_targets(current)
+            if matched:
+                warnings.append(f"Profile detected: {matched}")
+            else:
+                profile_str = ", ".join(f"{k}={v}" for k, v in current.items())
+                warnings.append(f"Warning: current combo targets ({profile_str}) don't match any known profile")
+        else:
+            warnings.append("Could not determine current profile")
+    except Exception:
+        warnings.append("Could not detect profile")
+
+    return warnings
+
+
 def resolve_profile(profile_name: str) -> dict[str, str]:
     """Resolve a profile name to {planner, coder, checker} model keys."""
     if profile_name in PROFILES:
