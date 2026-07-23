@@ -1,7 +1,7 @@
 # Farewell Helper v5
 
 OpenCode dual-agent orchestration + 9Router model gateway + Skills + Persona.  
-**Pro reasons. Flash executes.** No manual model switching.
+**Pro reasons. Flash executes.** Zero manual model switching.
 
 ## Architecture
 
@@ -27,108 +27,109 @@ OpenCode dual-agent orchestration + 9Router model gateway + Skills + Persona.
     └────────────┘                     └──────────┘
 ```
 
-**Farewell** (primary agent, `9router/Pro` → `ocg/deepseek-v4-pro`):
+**Farewell** (primary agent, `9router/Pro` → `ocg/deepseek-v4-pro`, reasoning disabled):
 - Reasoning, analysis, planning
-- Read-only file operations (grep, glob, read)
-- Light bash (ls, cd, mkdir)
-- NO direct file writing — delegates to executor
+- Read-only file ops, light bash
+- **Cannot write files** — `edit: deny` forces delegation
+- Manages progress via `todowrite`
 
 **executor** (subagent, `9router/Flash` → `ocg/deepseek-v4-flash`):
-- Code writing and execution
-- Heavy bash operations
-- Full filesystem access
+- Code writing, editing, execution
+- Full filesystem + bash access
+- No task/todowrite (reserved for primary agent)
 
-**Flow:** Boss chats with Farewell → Farewell reasons (Pro) → delegates writes to executor (Flash).
+**Flow:** Farewell reasons (Pro) → delegates writes to executor (Flash) → evaluates results → continues or confirms to Boss.
 
 ## Quick Start
 
 ```bash
 pip install -e .
 cp .env.example .env   # set NINEROUTER_API_KEY + NINEROUTER_AUTH_TOKEN
+# add OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS=true to .env
 farewell-helper init
 ```
 
-### 9Router combos (set via Web UI `:20128/dashboard/combos`)
+## 9Router Combos
 
-| Combo | Models | Strategy | Purpose |
-|-------|--------|----------|---------|
-| `Pro` | `ocg/deepseek-v4-pro` | fallback | Reasoning, planning |
-| `Flash` | `ocg/deepseek-v4-flash` | fallback | Code execution |
-| `Pro_Plan` | `ocg/deepseek-v4-pro` | fallback | Legacy: read-only planner |
-| `Execution_Paid` | `ocg/deepseek-v4-flash` | fallback | Legacy: direct execution |
-| `Experiment` | `ocg/deepseek-v4-pro` + `ocg/deepseek-v4-flash` | fallback | Redundant dual-model |
-| `FREE_OC` | Multiple free models | round-robin | Free tier rotation |
+All combos use **fallback** strategy (try models in order). Set via Web UI `:20128/dashboard/combos`.
 
-### OpenCode agents (configured in `opencode.jsonc`)
+| Combo | Models | Purpose |
+|-------|--------|---------|
+| `Pro` | `ocg/deepseek-v4-pro` | Farewell reasoning |
+| `Flash` | `ocg/deepseek-v4-flash` | Code execution |
+| `Pro_Plan` | `ocg/deepseek-v4-pro` | Legacy: read-only planner |
+| `Execution_Paid` | `ocg/deepseek-v4-flash` | Legacy: direct execution |
+| `Experiment` | Pro + Flash | Redundant dual-model |
+| `FREE_OC` | Multiple free models | Free tier |
 
-| Agent | Type | Model | Edits | Delegates |
-|-------|------|-------|-------|-----------|
-| `Farewell` | primary | `9router/Pro` | denied | executor |
-| `executor` | subagent | `9router/Flash` | allowed | — |
-| `build` | primary | `9router/Execution_Paid` | allowed | — |
-| `plan` | primary | `9router/Pro_Plan` | denied | — |
+## OpenCode Agents
+
+| Agent | Type | Model | Edit | Task | Todo |
+|-------|------|-------|------|------|------|
+| `Farewell` | primary | `9router/Pro` | deny | allow | allow |
+| `executor` | subagent | `9router/Flash` | allow | deny | deny |
+| `build` | primary | `9router/Execution_Paid` | allow | deny | allow |
+| `plan` | primary | `9router/Pro_Plan` | deny | deny | allow |
+
+**Key design decisions:**
+- `subagent_depth: 3` — executor can spawn sub-subagents
+- `primary_tools: ["todowrite"]` — only Farewell manages task tracking
+- `temperature: 0.7` on Farewell — balanced creativity vs stability
+- `reasoning: false` on Pro — prevents DeepSeek internal thinking from consuming output tokens
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
 | `init` | Bootstrap: verify persona + sync combos + health |
-| `start` | Session start: validate persona + project + 9Router |
-| `daily` | Full health check: verify + sync combos + token saver + 9Router |
+| `start` | Session init: persona + project + skills + 9Router |
+| `daily` | Full health check + combo sync + token saver |
 | `sync` | Fetch 9Router combos → resolve opencode config |
-| `verify` | Verify persona + skills + config + token saver conflicts |
-| `status` | Show current state + sub-project detection |
+| `verify` | Persona + skills + config + token saver conflicts |
+| `status` | Current state + sub-project detection |
 | `health` | Full project health (tests, memory, sessions) |
 | `project` | List/switch/unregister projects |
 | `setup-project <path>` | Register external repo |
 | `memory` | View/edit MEMORY.md and USER.md |
-| `handoff` | Show/save/list/search/export session handoffs |
+| `handoff` | Session handoffs |
 | `todo` | Manage TODO.md |
-| `done` | Auto-compress: commit + push + handoff |
+| `done` | Commit + push + handoff |
 | `pre-commit` | Quality gate: tests + TODO scan |
 
 ## Project Layout
 
 ```
 farewell-helper/
-├── PERSONA.md            # Behavioral rules — OVERRIDE all others
-├── README.md             # This file
-├── opencode.jsonc        # OpenCode config (agents, combos, MCP, skills)
-├── skills/               # 17 engineering skills (auto-discovered)
+├── PERSONA.md            # Behavioral authority — OVERRIDE all
+├── opencode.jsonc        # Agent config, providers, combos, MCP
+├── skills/               # 17 engineering skills
 ├── farewell_helper/      # Python CLI + MCP server
-│   ├── router_client.py  # 9Router HTTP: chat, models, settings, ping
-│   ├── sync.py           # Combo sync: 9Router API → opencode config
-│   ├── mcp.py            # MCP JSON-RPC 2.0 server
-│   ├── verify.py         # Persona/config/skills/token-saver verification
-│   └── commands/         # CLI subcommands
-├── source/               # 9Router + OpenCode upstream (audit reference)
-├── .farewell/            # Runtime data (gitignored): memory, handoffs
+├── source/               # 9Router + OpenCode upstream (audit)
+├── .farewell/            # Runtime data (gitignored)
 └── tests/                # pytest suite
 ```
 
 ## 9Router Token Saver
 
-| Feature | Status | Reason |
-|---------|--------|--------|
-| RTK | ✅ Safe | Tool_result compression only |
-| Caveman | ❌ Off | Conflicts with PERSONA.md communication |
-| Ponytail | ❌ Off | Conflicts with PERSONA.md identity |
-| Headroom | ✅ Safe | External proxy compression |
-| PxPipe | ✅ Safe | Image compression |
+| Feature | Status |
+|---------|--------|
+| RTK | ✅ Safe — tool_result compression |
+| Caveman | ❌ Off — conflicts with PERSONA.md |
+| Ponytail | ❌ Off — conflicts with PERSONA.md |
+| Headroom | ✅ Safe — external proxy |
+| PxPipe | ✅ Safe — image only |
 
 ## Skills
-
-17 minimal skills, auto-discovered from `skills/` directory.
 
 | Skill | Purpose |
 |-------|---------|
 | `farewell-persona` | Identity, triggers, caveman style |
 | `farewell-tdd` | TDD + code review + module design |
 | `farewell-diagnosing-bugs` | 6-phase debug loop |
-| `farewell-grilling` | Interview loop + shared vocabulary |
+| `farewell-grilling` | Interview + shared vocabulary |
 | `farewell-python` | Python + FastAPI + pytest |
 | `farewell-flutter` | Dart + Flutter |
-| `farewell-frontend` | React + Vue + components |
+| `farewell-frontend` | React + Vue components |
 | `farewell-c` | C + kernel memory safety |
 | `farewell-devops` | Docker + CI/CD + Postgres + Redis |
 | `farewell-rust` | Rust ownership + concurrency |
@@ -142,15 +143,13 @@ farewell-helper/
 
 ## Principles
 
-1. YAGNI ladder: stdlib > platform > existing dep > one-liner > code
-2. Deletion over addition. Boring over clever.
-3. PERSONA.md is the sole behavioral authority.
-4. Pro reasons, Flash executes, nunca manual switch.
+1. PERSONA.md is the sole behavioral authority
+2. YAGNI ladder: stdlib > platform > existing dep > one-liner > code
+3. Deletion over addition. Boring over clever.
+4. Pro reasons, Flash executes, zero manual switch.
 
 ## Credits
 
-- [9Router](https://github.com/ai-shifu/9router) — AI model gateway with combo fallback
-- [OpenCode](https://github.com/anomalyco/opencode) — Agent runtime with subagent delegation
+- [9Router](https://github.com/ai-shifu/9router) — AI model gateway + combo fallback
+- [OpenCode](https://github.com/anomalyco/opencode) — Agent runtime + subagent delegation
 - [Codebase-Memory](https://github.com/DeusData/codebase-memory-mcp) — Knowledge graph for code
-- [ECC by affaan-m](https://github.com/affaan-m/ECC) — Engineering style reference
-- [Matt Pocock's Skills](https://github.com/mattpocock/skills) — Minimal methodology reference
