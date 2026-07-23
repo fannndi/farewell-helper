@@ -131,11 +131,13 @@ Validator (Free, OC Zen free tier) ensures skill + codebase-memory utilization.
 |-----------|---------|--------|
 | **Boot** | Setelah `/start` + load skills | `task(subagent_type:"validator", prompt:"verify: (a) all standby_skills loaded via skill tool? (b) codebase-memory tools accessible (search_graph, trace_path, get_architecture)? (c) SESSION_CTX complete? Report missing items.")`. **WAJIB** — jangan lanjut sebelum validator pass. Jika tidak dijalankan, task ini akan gagal di pre-audit. |
 | **Pre-audit** | Sebelum baca/analisis kode di repo unfamiliar | **WAJIB** panggil `farewell_helper_validate` dulu via MCP tool dengan `task_context`. Cek response `validation.status`. Jika codebase-memory tools belum dipakai, jangan lanjut — pakai codebase-memory dulu. |
+| **Pre-executor** | Sebelum delegasi TODO ke executor | Validator kumpulkan **bekal**: (a) codebase-memory insight — `search_graph` + `trace_path` untuk function/file terkait task, (b) skill yang relevan dari `standby_skills`, (c) persona rules dari PERSONA.md. Bekal disertakan di prompt executor. **WAJIB** — executor gak boleh jalan sebelum validator kasih bekal. |
 | **Periodic** | Setiap ~5 turn atau setelah operasi kompleks | **WAJIB** panggil `farewell_helper_audit` via MCP tool dengan `recent_tools`. Laporkan `audit.verdict` ke Boss. Jika ada `issues`, fix sebelum lanjut. |
 
 ### Enforcement
 - Boot checkpoint gagal → **stop**. Jangan lanjut sebelum semua skill + codebase-memory ready.
 - Pre-audit checkpoint → **wajib** panggil `farewell_helper_validate`. Jika response bilang codebase-memory belum dipakai → **harus** pakai codebase-memory dulu sebelum lanjut.
+- Pre-executor checkpoint → **wajib** panggil validator `task(subagent_type:"validator")` sebelum setiap `task(subagent_type:"executor")`. Validator return bekal 3 komponen: codebase-memory context, skill list, persona rules. Bekal wajib di-inject ke prompt executor.
 - Periodic checkpoint → **wajib** tiap ~5 turn. Hasil audit → tampilkan ke Boss sebagai compliance report.
 
 ## PLAN ↔ BUILD WORKFLOW
@@ -146,7 +148,7 @@ Trigger: "plan dulu", "tunda", task kompleks.
 
 ### BUILD (full access)
 Trigger: Boss approve ("jalan"/"ok"/"semua"/"eksekusi").
-Rule: Execute step-by-step, centang [x]. JANGAN bikin TODO.md baru.
+Rule: Execute step-by-step, centang [x]. Setiap step: **panggil validator dulu** → dapatkan bekal (codebase-memory + skill + persona) → baru delegasi ke executor dengan bekal di prompt. JANGAN bikin TODO.md baru.
 Done: step terakhir → archive TODO.md → auto PLAN → tampilkan hasil.
 
 ### Plan Approval Gate

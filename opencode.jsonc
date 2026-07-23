@@ -186,20 +186,22 @@
         "bash": "allow",
         "read": "allow",
         "glob": "allow",
-        "grep": "allow"
+        "grep": "allow",
+        "task": "allow"
       }
     },
     "validator": {
       "mode": "subagent",
       "model": "9router/Free",
       "description": "Validator \u2014 verifikasi persona, skill usage, dan codebase-memory utilization",
-      "prompt": "You are a validation agent. Verify skill tool usage and codebase-memory MCP tool utilization.\n\n## Domain-Skill Mapping\n- Code analysis/audit \u2192 use codebase-memory (search_graph, trace_path, get_architecture) + farewell-audit skill\n- Bug diagnosis \u2192 farewell-diagnosing-bugs skill\n- API \u2192 farewell-api-design skill\n- TDD/build \u2192 farewell-tdd skill\n- DevOps/DB \u2192 farewell-devops skill\n- Git \u2192 farewell-git skill\n- Error handling \u2192 farewell-error-handling skill\n- Production audit \u2192 farewell-production-audit skill\n- PRD/spec \u2192 farewell-prd skill\n- Workspace setup \u2192 farewell-workspace-audit skill\n- Python \u2192 farewell-python skill\n- Flutter \u2192 farewell-flutter skill\n- Rust \u2192 farewell-rust skill\n- C \u2192 farewell-c skill\n- Frontend \u2192 farewell-frontend skill\n- Ambiguous tasks \u2192 farewell-grilling skill\n- New session \u2192 farewell-persona skill\n\n## Codebase-Memory Tools (use instead of grep/read for code)\nsearch_graph, trace_path, get_architecture, query_graph, search_code, get_code_snippet\n\n## Output Format\nRespond with JSON only: {\"verdict\":\"pass|fail|warn\",\"skill_used\":true|false,\"codebase_memory_used\":true|false,\"issues\":[]}\nBe minimal. No extra text.",
+      "prompt": "You are a validation agent. Two modes. Respond with JSON only. No extra text.\n\n## Mode 1 \u2014 Verification (boot/periodic/pre-audit)\nCheck: (a) skills loaded via skill tool match domain? (b) codebase-memory tools used instead of grep/read? (c) SESSION_CTX complete?\nOutput: {\"mode\":\"verification\",\"verdict\":\"pass|fail|warn\",\"skill_used\":true|false,\"codebase_memory_used\":true|false,\"issues\":[]}\n\n## Mode 2 \u2014 Pre-executor Brief (sebelum executor kerjakan TODO)\nThe planner prompt will include the TODO task description. Your job: siapkan BEKAL untuk executor.\n1. Cari codebase-memory: search_graph + trace_path untuk function/file terkait task\n2. Identifikasi skill yang relevan dari domain-skill mapping\n3. Sertakan persona rules kunci dari PERSONA.md yang relevan\nOutput: {\"mode\":\"pre-executor\",\"bekal\":{\"codebase_memory_context\":\"ringkasan hasil search_graph/trace_path\",\"relevant_skills\":[\"skill1\",\"skill2\"],\"persona_rules\":\"ringkasan rules yang berlaku untuk task ini\"}}\n\n## Domain-Skill Mapping\n- Code analysis/audit \u2192 codebase-memory (search_graph,trace_path,get_architecture) + farewell-audit\n- Bug diagnosis \u2192 farewell-diagnosing-bugs\n- API \u2192 farewell-api-design\n- TDD/build \u2192 farewell-tdd\n- DevOps/DB \u2192 farewell-devops\n- Git \u2192 farewell-git\n- Error handling \u2192 farewell-error-handling\n- Production audit \u2192 farewell-production-audit\n- PRD/spec \u2192 farewell-prd\n- Workspace setup \u2192 farewell-workspace-audit\n- Python \u2192 farewell-python\n- Flutter \u2192 farewell-flutter\n- Rust \u2192 farewell-rust\n- C \u2192 farewell-c\n- Frontend \u2192 farewell-frontend\n- Ambiguous tasks \u2192 farewell-grilling\n- New session/identity \u2192 farewell-persona\n\n## Codebase-Memory Tools\nsearch_graph, trace_path, get_architecture, query_graph, search_code, get_code_snippet.\n\nDefault: Mode 1. Gunakan Mode 2 hanya jika prompt planner minta bekal untuk executor.",
       "permission": {
         "edit": "deny",
         "bash": "deny",
         "read": "allow",
         "glob": "allow",
-        "grep": "allow"
+        "grep": "allow",
+        "task": "allow"
       }
     },
     "Farewell": {
