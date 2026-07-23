@@ -61,6 +61,12 @@ class TestCLICommands:
         r = _run("project", "status")
         assert r.returncode == 0
 
+    def test_sub_project_dashboard(self):
+        r = _run("sub-project")
+        assert r.returncode == 0
+        assert "Sub-Project" in r.stdout
+        assert "Registered Projects" in r.stdout or "No projects" in r.stdout
+
     def test_todo_create_show_delete(self):
         r_create = _run("todo", "create", "--task", "test smoke task")
         assert r_create.returncode == 0

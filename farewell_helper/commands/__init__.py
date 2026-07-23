@@ -112,9 +112,26 @@ def main() -> None:
     p.add_argument("--audit", action="store_true", help="Refresh workspace audit")
     p.set_defaults(func=lambda args: _cmd_assist(args))
 
+    # sub-project — dashboard + assistant mode
+    p = sub.add_parser("sub-project", help="Sub-project assistant: dashboard, switch, or register projects")
+    p.add_argument("--switch", "-s", help="Project code to switch to")
+    p.add_argument("--register", "-r", help="Path to register new project")
+    p.set_defaults(func=lambda args: _cmd_sub_project(args))
+
     # skills — JSON output of standby skills for the active project
     p = sub.add_parser("skills", help="List standby skills as JSON for the active project")
     p.set_defaults(func=lambda args: _cmd_skills())
+
+    # rotate
+    p = sub.add_parser("rotate", help="Rotate model assignment across agents (planner/coder/checker)")
+    p.add_argument("profile", nargs="?", default="default",
+                   choices=["default", "budget", "quality", "experimental", "custom"],
+                   help="Rotation profile (default: default)")
+    p.add_argument("--planner", choices=["pro", "flash", "free"], help="Override planner model")
+    p.add_argument("--coder", choices=["pro", "flash", "free"], help="Override coder model")
+    p.add_argument("--checker", choices=["pro", "flash", "free"], help="Override checker model")
+    p.add_argument("--dry-run", action="store_true", help="Preview without applying")
+    p.set_defaults(func=lambda args: _cmd_rotate(args))
 
     args = parser.parse_args()
     if not args.command:
@@ -388,3 +405,148 @@ def _cmd_skills() -> None:
     """Output standby skill names as JSON for the active project."""
     from ..mcp import _run_skills_json
     print(_run_skills_json())
+
+
+def _cmd_sub_project(args: argparse.Namespace) -> None:
+    """Sub-project assistant: dashboard with rich stats, switch, or register."""
+    import argparse
+    from ..helpers import ok, fail, info, c
+    from .. import config
+    from .project import get_active, _load_projects, set_active
+    from ..setup_project import discover_shortcuts
+    from ..core.memory import memory_content, memory_usage_pct
+    from ..archetype import detect, get_standby_skills
+
+    # --register: quick setup shortcut
+    if args.register:
+        from . import _cmd_setup_project
+        ns = argparse.Namespace(path=args.register)
+        _cmd_setup_project(ns)
+        return
+
+    active = get_active()
+    projects = _load_projects()
+
+    # --switch: direct switch
+    if args.switch:
+        target = [p for p in projects if p["code"] == args.switch]
+        if not target:
+            fail(f"Project not found: {args.switch}")
+            return
+        from .project import cmd_project
+        ns = argparse.Namespace(action="switch", code=args.switch)
+        cmd_project(ns)
+        return
+
+    # Gather graph stats via codebase-memory
+    graph_stats: dict[str, dict] = {}
+    try:
+        import subprocess, json as _json
+        r = subprocess.run(
+            ["codebase-memory-mcp", "cli", "list_projects"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if r.returncode == 0:
+            data = _json.loads(r.stdout)
+            for p in data.get("projects", []):
+                name = p.get("name", "")
+                graph_stats[name] = {
+                    "nodes": p.get("nodes", 0),
+                    "edges": p.get("edges", 0),
+                    "root_path": p.get("root_path", ""),
+                }
+    except Exception:
+        pass
+
+    # Dashboard header
+    print(f"\n  {c('Sub-Project Assistant', 'cyan')}")
+    print(f"  {'-' * 54}")
+
+    if not projects:
+        print(f"  {c('No projects registered.', 'yellow')}")
+    else:
+        print(f"  {c('Registered Projects:', 'bold')}")
+        for p in projects:
+            code = p["code"]
+            name = p["name"]
+            is_active = code == active["code"]
+            tag = c("[ACTIVE]", "green") if is_active else "       "
+
+            proj_path = config.project_path(code)
+            stack = "?"
+            if proj_path:
+                arc = detect(proj_path)
+                stack = arc.get("stack", "?")
+
+            # Graph stats
+            cm_name = None
+            if proj_path:
+                norm = str(proj_path).replace("\\", "/")
+                for gname, gdata in graph_stats.items():
+                    if gdata.get("root_path", "").replace("\\", "/").rstrip("/") == norm.rstrip("/"):
+                        cm_name = gname
+                        break
+            nodes_str = f"{graph_stats[cm_name]['nodes']} nodes" if cm_name and cm_name in graph_stats else "not indexed"
+
+            # TODO count
+            todo_file = config.project_farewell_dir(code) / "context" / "TODO.md"
+            pending = 0
+            if todo_file.exists():
+                todo = todo_file.read_text(encoding="utf-8")
+                pending = todo.count("- [ ]")
+
+            # Memory
+            mem_pct = memory_usage_pct(code, name)
+            mem_str = f"{mem_pct:.0f}% mem" if mem_pct > 0 else "empty"
+
+            print(f"  {code}-{name:<22} {tag}  {stack:<7}  {nodes_str:<15}  {pending} pending  {mem_str}")
+
+    # Shortcuts
+    shortcuts = discover_shortcuts()
+    if shortcuts:
+        print(f"\n  {c('Discovered Shortcuts:', 'bold')}")
+        for sc in shortcuts:
+            status = c("REGISTERED", "green") if sc["registered"] else (c("HAS .farewell", "yellow") if sc["has_farewell"] else c("UNREGISTERED", "red"))
+            print(f"  {sc['name']} -> {sc['target']} [{status}]")
+
+    # Codebase-Memory status
+    indexed_count = len(graph_stats)
+    if indexed_count:
+        print(f"\n  {c('Codebase-Memory:', 'bold')} {indexed_count} project(s) indexed")
+        if indexed_count >= 2:
+            print(f"  {c('Cross-project intelligence available', 'green')}")
+    else:
+        print(f"\n  {c('Codebase-Memory:', 'bold')} not available -- install for 120x faster audits")
+
+    print(f"  {'-' * 54}")
+
+    # Actions — print for Farewell to pick up in chat
+    if not args.switch:
+        print(f"\n  {c('Actions:', 'bold')}")
+        print(f"  farewell-helper sub-project --switch <code>   -> switch ke project")
+        print(f"  farewell-helper sub-project --register <path>  -> register project baru")
+        print(f"  farewell-helper setup-project <path>         -> register project baru (full)")
+
+
+def _cmd_rotate(args: argparse.Namespace) -> None:
+    """Rotate model assignment across agents."""
+    from ..rotate import cmd_rotate, PROFILES
+    if args.profile == "custom":
+        if not any([args.planner, args.coder, args.checker]):
+            from ..helpers import fail
+            fail("custom profile requires at least one --planner/--coder/--checker override")
+            return
+        # Start from default, apply all overrides
+        profile = "default"
+    else:
+        profile = args.profile
+
+    overrides: dict[str, str] = {}
+    if args.planner:
+        overrides["planner"] = args.planner
+    if args.coder:
+        overrides["coder"] = args.coder
+    if args.checker:
+        overrides["checker"] = args.checker
+
+    cmd_rotate(profile, overrides=overrides if overrides else None, dry_run=args.dry_run)

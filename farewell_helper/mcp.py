@@ -15,6 +15,8 @@ TOOLS = [
     {"name": "farewell_helper_memory", "description": "Return MEMORY.md and USER.md content for the active project", "inputSchema": {"type": "object", "properties": {}}},
     {"name": "farewell_helper_glossary", "description": "Return AUTO-GLOSSARY.md content for the active project", "inputSchema": {"type": "object", "properties": {}}},
     {"name": "farewell_helper_handoffs", "description": "Return list of session handoffs for the active project", "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "farewell_helper_validate", "description": "Pre-audit check: verify codebase-memory tools will be used for code analysis. Call BEFORE any code search/analysis on unfamiliar repos.", "inputSchema": {"type": "object", "properties": {"task_context": {"type": "string", "description": "What are you about to do? (e.g. 'analyze code in src/services')"}}}},
+    {"name": "farewell_helper_audit", "description": "Periodic audit: check recent tool usage for skill and codebase-memory compliance. Call every ~5 turns.", "inputSchema": {"type": "object", "properties": {"recent_tools": {"type": "string", "description": "Comma-separated list of tool names used recently"}}}},
     {"name": "farewell_helper_session_init", "description": "Unified session context — project, skills, memory, glossary, handoffs, 9Router, graph. One call replaces 6.", "inputSchema": {"type": "object", "properties": {}}},
 ]
 
@@ -146,6 +148,49 @@ def _run_session_init_json() -> str:
 
     result["snip_installed"] = _check_snip_installed()
 
+    codebase_memory_ok = False
+    codebase_memory_project = None
+    try:
+        r = subprocess.run(
+            ["codebase-memory-mcp", "--version"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if r.returncode == 0:
+            codebase_memory_ok = True
+            try:
+                r2 = subprocess.run(
+                    ["codebase-memory-mcp", "cli", "list_projects"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if r2.returncode == 0:
+                    import json as _json
+                    data = _json.loads(r2.stdout)
+                    projects = data.get("projects", [])
+                    if proj_path and projects:
+                        norm_path = str(proj_path).replace("\\", "/")
+                        for p in projects:
+                            p_root = p.get("root_path", "").replace("\\", "/")
+                            if p_root == norm_path or p_root.rstrip("/") == norm_path.rstrip("/"):
+                                codebase_memory_project = p.get("name")
+                                break
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    result["codebase_memory_available"] = codebase_memory_ok
+    if codebase_memory_project:
+        result["codebase_memory_project"] = codebase_memory_project
+
+    expected_skills = result.get("standby_skills", [])
+    result["boot_validation"] = {
+        "expected_skills_count": len(expected_skills),
+        "expected_skills": expected_skills,
+        "codebase_memory_available": codebase_memory_ok,
+        "status": "pass",
+        "message": f"{len(expected_skills)} skills, codebase-memory: {'ok' if codebase_memory_ok else 'unavailable'}"
+    }
+
     return json.dumps(result)
 
 
@@ -172,7 +217,8 @@ def _capture(fn: Callable[[], None]) -> str:
         sys.stdout, sys.stderr = old_out, old_err
 
 
-def _run_tool(name: str) -> str:
+def _run_tool(name: str, params: dict | None = None) -> str:
+    params = params or {}
     if name == "farewell_helper_verify":
         from .commands.state import verify
         return _capture(verify)
@@ -197,6 +243,38 @@ def _run_tool(name: str) -> str:
         return _run_handoffs_json()
     if name == "farewell_helper_session_init":
         return _run_session_init_json()
+    if name == "farewell_helper_validate":
+        task_context = json.loads(params.get("arguments", "{}")).get("task_context", "code analysis")
+        return json.dumps({
+            "validation": {
+                "action": "pre-audit",
+                "context": task_context,
+                "codebase_memory_required": True,
+                "status": "reminder",
+                "message": "Use codebase-memory tools (search_graph, trace_path, get_architecture) instead of grep/read for code analysis",
+                "recommended_skills": ["farewell-audit"],
+            }
+        })
+    if name == "farewell_helper_audit":
+        recent_tools = json.loads(params.get("arguments", "{}")).get("recent_tools", "")
+        tool_list = [t.strip() for t in recent_tools.split(",") if t.strip()]
+        skill_used = any("skill" in t for t in tool_list)
+        cm_used = any("codebase-memory" in t or "search_graph" in t or "trace_path" in t or "get_architecture" in t or "search_code" in t for t in tool_list)
+        issues = []
+        if not skill_used:
+            issues.append("No skill tool used — check if task matches a skill domain")
+        if not cm_used:
+            issues.append("No codebase-memory tool used — prefer search_graph/trace_path over grep/read")
+        return json.dumps({
+            "audit": {
+                "periodic": True,
+                "recent_tools_count": len(tool_list),
+                "skill_used": skill_used,
+                "codebase_memory_used": cm_used,
+                "issues": issues,
+                "verdict": "pass" if not issues else "warn",
+            }
+        })
     return json.dumps({"error": f"Unknown tool: {name}"})
 
 
@@ -240,7 +318,7 @@ def serve() -> None:
             _write({"jsonrpc": "2.0", "id": msg_id, "result": {"tools": TOOLS}})
         elif method == "tools/call":
             tool_name = params.get("name", "")
-            raw = _run_tool(tool_name)
+            raw = _run_tool(tool_name, params)
             try:
                 parsed = json.loads(raw)
                 text = parsed.get("stdout", raw)
